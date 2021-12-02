@@ -16,15 +16,22 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    grid_value_rect_item.cpp \
     main.cpp \
     main_window.cpp \
+    properties_item.cpp \
+    properties_widget.cpp
+    grid_value_rect_item.cpp \
 
 HEADERS += \
-    grid_value_rect_item.h \
     main_window.h \
+    properties_item.h \
+    properties_widget.h
+    grid_value_rect_item.h \
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resources.qrc

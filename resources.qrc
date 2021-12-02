@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/properties/tool_properties.dat</file>
+    </qresource>
+</RCC>
