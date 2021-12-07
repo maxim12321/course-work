@@ -18,12 +18,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     main_window.cpp \
+    menu.cpp \
     properties_item.cpp \
     properties_widget.cpp
     grid_value_rect_item.cpp \
 
 HEADERS += \
     main_window.h \
+    menu.h \
     properties_item.h \
     properties_widget.h
     grid_value_rect_item.h \
