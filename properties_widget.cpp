@@ -32,5 +32,3 @@ void PropertiesWidget::SaveToFile(const QString& file_name) {
 
     file.close();
 }
-
-void PropertiesWidget::LoadFromFile(const QString& file_name) {}

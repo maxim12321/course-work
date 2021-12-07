@@ -1,8 +1,11 @@
-#include <QMenu>
-#include <QMenuBar>
 #include "menu.h"
 
-Menu::Menu(QMainWindow *parent) : QMainWindow(parent) {
+#include <QMenu>
+#include <QMenuBar>
+
+#include "main_window.h"
+
+Menu::Menu(MainWindow *parent) : QMainWindow(parent) {
     QAction *save_properties = new QAction("&Сохранить параметры", parent);
 
     QMenu *file;

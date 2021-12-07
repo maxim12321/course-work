@@ -4,9 +4,11 @@
 #include <QMainWindow>
 #include <QApplication>
 
+class MainWindow;
+
 class Menu : public QMainWindow {
 public:
-    explicit Menu(QMainWindow* parent = nullptr);
+    explicit Menu(MainWindow* parent = nullptr);
 
     ~Menu() = default;
 
