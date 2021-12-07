@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/properties/tool_properties.dat</file>
+        <file>resources/properties/plate_material_properties.dat</file>
+        <file>resources/properties/backing_material_properties.dat</file>
+        <file>resources/properties/numerical_method_properties.dat</file>
+        <file>resources/properties/heat_exchange_properties.dat</file>
+    </qresource>
+</RCC>
