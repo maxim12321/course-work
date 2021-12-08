@@ -2,6 +2,7 @@
 
 #include <QMap>
 #include <QStandardItem>
+#include <QTextStream>
 
 class PropertiesItem : public QStandardItem {
 public:
