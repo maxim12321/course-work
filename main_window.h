@@ -1,8 +1,10 @@
 #pragma once
 
 #include <QMainWindow>
+
 #include "menu.h"
 #include "properties_widget.h"
+#include "player_widget.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -18,4 +20,5 @@ private slots:
 private:
     Menu* menu_;
     PropertiesWidget* properties_;
+    PlayerWidget* player_;
 };
