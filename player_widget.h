@@ -5,11 +5,13 @@
 #include <QSlider>
 #include <QComboBox>
 
+class GridDataProcessor;
+
 class PlayerWidget : public QWidget {
     Q_OBJECT
 
 public:
-    PlayerWidget(QWidget* parent = nullptr);
+    PlayerWidget(GridDataProcessor* processor, QWidget* parent = nullptr);
 
     ~PlayerWidget() = default;
 

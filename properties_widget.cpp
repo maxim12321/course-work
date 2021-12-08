@@ -1,5 +1,6 @@
 #include "properties_widget.h"
 
+#include <QDebug>
 #include <QFile>
 
 PropertiesWidget::PropertiesWidget(QWidget* parent) : QTreeView(parent) {

@@ -55,6 +55,8 @@ void GridValueRectItem::SetGridValues(const QVector<QVector<qreal>>& grid_values
     grid_values_ = grid_values;
     grid_height_ = grid_values.size();
     grid_width_ = grid_values[0].size();
+
+    update(rect());
 }
 
 QColor GridValueRectItem::BlendColors(const QVector<QColor>& colors) {

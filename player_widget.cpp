@@ -2,14 +2,18 @@
 
 #include <QBoxLayout>
 
-PlayerWidget::PlayerWidget(QWidget* parent) : QWidget(parent) {
+#include "grid_data_processor.h"
+
+PlayerWidget::PlayerWidget(GridDataProcessor* processor, QWidget* parent) : QWidget(parent) {
     QHBoxLayout* layout = new QHBoxLayout();
 
     play_button_ = new QPushButton("Play", this);
     layout->addWidget(play_button_);
+    connect(play_button_, SIGNAL(released()), processor, SLOT(Start()));
 
     stop_button_ = new QPushButton("Stop", this);
     layout->addWidget(stop_button_);
+    connect(stop_button_, SIGNAL(released()), processor, SLOT(Pause()));
 
     time_line_ = new QSlider(Qt::Horizontal, this);
     layout->addWidget(time_line_);
