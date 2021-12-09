@@ -7,8 +7,8 @@ PropertiesWidget::PropertiesWidget(QWidget* parent) : QTreeView(parent) {
     QStandardItemModel* model = new QStandardItemModel(0, 1);
 
     for (const auto& property: kPropertyConfigFileNames) {
-        property_to_item_[property.first] = new PropertiesItem(property.second);
-        model->appendRow(property_to_item_[property.first]);
+        property_to_item_[property[0]] = new PropertiesItem(property[1], property[2]);
+        model->appendRow(property_to_item_[property[0]]);
     }
 
     model->setHorizontalHeaderItem(0, new QStandardItem("Параметр"));
@@ -32,4 +32,11 @@ void PropertiesWidget::SaveToFile(const QString& file_name) {
     }
 
     file.close();
+}
+
+void PropertiesWidget::CreateInputForSolver() {
+    for (const auto& property : property_to_item_.keys()) {
+        qDebug() << property << "\n";
+        property_to_item_[property]->CreateInputForSolver();
+    }
 }

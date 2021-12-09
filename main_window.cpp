@@ -5,7 +5,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QPushButton>
-#include <QPushButton>
 
 #include "grid_data_processor.h"
 #include "grid_value_rect_item.h"
@@ -23,8 +22,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     view->scale(4, 4);
     layout->addWidget(view);
 
+    QVBoxLayout* properties_layout = new QVBoxLayout();
     properties_ = new PropertiesWidget(this);
-    layout->addWidget(properties_);
+    properties_layout->addWidget(properties_);
+
+    QPushButton* compute_button = new QPushButton("Вычислить", this);
+    connect(compute_button, SIGNAL (released()), properties_, SLOT (CreateInputForSolver()));
+    properties_layout->addWidget(compute_button);
+
+    layout->addLayout(properties_layout);
 
     menu_ = new Menu(this);
 
