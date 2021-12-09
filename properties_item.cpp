@@ -1,19 +1,20 @@
 #include "properties_item.h"
 
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QStandardItem>
 #include <QString>
 
-PropertiesItem::PropertiesItem(const QString& file_name)
-    : QStandardItem(), file_name_(file_name) {
+PropertiesItem::PropertiesItem(const QString& config_file_name, const QString& solver_input_file_name)
+    : QStandardItem(), config_file_name_(config_file_name), solver_input_file_name_(solver_input_file_name) {
     setEditable(false);
 
     CreateFromFile();
 }
 
 void PropertiesItem::CreateFromFile() {
-    QFile file(kFilePath + file_name_);
+    QFile file(kConfigFilePath + config_file_name_);
     if(!file.open(QIODevice::ReadOnly)) {
         qDebug() << "error opening file: " << file.error();
         return;
@@ -21,7 +22,7 @@ void PropertiesItem::CreateFromFile() {
 
     setText(file.readLine().trimmed());
 
-    int max_name_width = 0;
+    qsizetype max_name_width = 0;
     while (!file.atEnd()) {
         QString params_line = file.readLine().trimmed();
         QStringList params = params_line.split('|');
@@ -51,6 +52,24 @@ void PropertiesItem::CreateFromFile() {
     }
 
     setSizeHint(QSize(max_name_width * 10, 10));
+}
+
+void PropertiesItem::CreateInputForSolver() {
+    if (!QDir(kInputFilePath).exists()) {
+        QDir().mkdir(kInputFilePath);
+    }
+    QFile file(kInputFilePath + solver_input_file_name_);
+    if(!file.open(QIODevice::WriteOnly)) {
+        qDebug() << "error opening file: " << file.error();
+        return;
+    }
+    QTextStream file_stream(&file);
+
+    for (int i = 0; i < rowCount(); ++i) {
+        file_stream << child(i, 1)->text() << "\n";
+    }
+
+    file.close();
 }
 
 void PropertiesItem::SaveToFile(QTextStream& file_stream) {
