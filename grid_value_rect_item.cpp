@@ -11,9 +11,6 @@ GridValueRectItem::GridValueRectItem(int x, int y, int width, int height,
       grid_values_(2, QVector<qreal>(2, 0)),
       grid_width_(2),
       grid_height_(2) {
-    // random colors to test
-    grid_values_[0][1] = kMaxValue;
-    grid_values_[1][0] = kMaxValue / 2;
 }
 
 void GridValueRectItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*) {
@@ -41,7 +38,7 @@ void GridValueRectItem::paint(QPainter* painter, const QStyleOptionGraphicsItem*
             }
 
             painter->setPen(BlendColors(colors));
-            painter->drawPoint(QPoint(x, y));
+            painter->drawPoint(QPoint(x, rect().height() - y));
         }
     }
 
@@ -56,23 +53,39 @@ void GridValueRectItem::SetGridValues(const QVector<QVector<qreal>>& grid_values
     grid_height_ = grid_values.size();
     grid_width_ = grid_values[0].size();
 
+    min_value_ = grid_values[0][0];
+    max_value_ = grid_values[0][0];
+
+    for (const auto& line: grid_values) {
+        for (const auto& value: line) {
+            min_value_ = std::min(min_value_, value);
+            max_value_ = std::max(max_value_, value);
+        }
+    }
+
     update(rect());
 }
 
 QColor GridValueRectItem::BlendColors(const QVector<QColor>& colors) {
-    QVector2D total(0, 0);
-    for (const QColor& color: colors) {
-        total += QVector2D(1, 0) * qCos(color.hueF() * 2 * M_PI) * color.alphaF();
-        total += QVector2D(0, 1) * qSin(color.hueF() * 2 * M_PI) * color.alphaF();
-    }
-    total.normalize();
+//    QVector2D total(0, 0);
+//    for (const QColor& color: colors) {
+//        total += QVector2D(1, 0) * qCos(color.hueF() * 2 * M_PI) * color.alphaF();
+//        total += QVector2D(0, 1) * qSin(color.hueF() * 2 * M_PI) * color.alphaF();
+//    }
+//    total.normalize();
 
-    qreal hue = qAtan2(total.y(), total.x());
-    hue /= M_PI * 2;
-    if (hue < 0) {
-        hue += 1;
+//    qreal hue = qAtan2(total.y(), total.x());
+//    hue /= M_PI * 2;
+//    if (hue < 0) {
+//        hue += 1;
+//    }
+    qreal total_hue = 0;
+    qreal total_alpha = 0;
+    for (const QColor& color: colors) {
+        total_hue += color.hueF() * color.alphaF();
+        total_alpha += color.alphaF();
     }
-    return QColor::fromHsvF(hue, 1, 1);
+    return QColor::fromHsvF(total_hue / total_alpha, 1, 1);
 }
 
 QPoint GridValueRectItem::FindNearestOnGrid(const QPoint& to) {
@@ -101,7 +114,7 @@ QPointF GridValueRectItem::DistanceFromGrid(const QPoint& grid_point, const QPoi
 
 QColor GridValueRectItem::GetColorByGridValue(const QPoint& grid_point) {
     qreal value = grid_values_[grid_point.y()][grid_point.x()];
-    qreal color_coefficient = (value - kMinValue) / (kMaxValue - kMinValue);
+    qreal color_coefficient = (value - min_value_) / (max_value_ - min_value_);
 
     QColor min_color = kMinValueColor;
     min_color.setAlphaF(1 - color_coefficient);

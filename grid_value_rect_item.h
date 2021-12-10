@@ -25,14 +25,14 @@ private:
     QColor GetColorByGridValue(const QPoint& grid_point);
 
 private:
-    const QColor kMinValueColor = QColor::fromHsv(0, 255, 255);
-    const QColor kMaxValueColor = QColor::fromHsv(120, 255, 255);
-
-    const qreal kMinValue = 0;
-    const qreal kMaxValue = 1;
+    const QColor kMinValueColor = QColor::fromHsv(230, 255, 255);
+    const QColor kMaxValueColor = QColor::fromHsv(0, 255, 255);
 
 private:
     QVector<QVector<qreal>> grid_values_;
     int grid_width_;
     int grid_height_;
+
+    qreal min_value_ = 0;
+    qreal max_value_ = 1;
 };

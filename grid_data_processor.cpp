@@ -3,10 +3,14 @@
 #include <QDebug>
 
 GridDataProcessor::GridDataProcessor(GridValueRectItem* grid_item,
+                                     int width, int height,
                                      int total_steps, int timer_interval)
     : grid_item_(grid_item),
       total_steps_(total_steps),
-      default_timer_interval_(timer_interval) {
+      default_timer_interval_(timer_interval),
+      data_loader_(width, height) {
+    grid_data_ = data_loader_.LoadData();
+
     timer_ = new QTimer(this);
     connect(timer_, SIGNAL(timeout()), this, SLOT(UpdateData()));
 }
@@ -62,18 +66,12 @@ void GridDataProcessor::UpdateData() {
     emit DataUpdated(1. * current_step_ / total_steps_);
 }
 
-QVector<QVector<qreal>> GridDataProcessor::GetGridData(int step) {
-    // TODO: Replace this placeholder with calculated values
-    QVector<QVector<qreal>> data(5, QVector<qreal>(10, 0));
-
-    int x = step % data[0].size();
-    int y = (step / data[0].size()) % data.size();
-    data[y][x] = 1;
-    return data;
+QVector<QVector<qreal>> GridDataProcessor::GetGridData(int) {
+    return grid_data_;
 }
 
 void GridDataProcessor::DisplayData() {
-    grid_item_->SetGridValues(GetGridData(current_step_));
+    grid_item_->SetGridValues(grid_data_);
 }
 
 void GridDataProcessor::RerunTimer() {
