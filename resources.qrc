@@ -5,5 +5,7 @@
         <file>resources/properties/backing_material_properties.dat</file>
         <file>resources/properties/numerical_method_properties.dat</file>
         <file>resources/properties/heat_exchange_properties.dat</file>
+        <file>resources/solver/runner.sh</file>
+        <file>resources/solver/solver.exe</file>
     </qresource>
 </RCC>

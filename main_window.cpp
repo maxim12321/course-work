@@ -10,6 +10,7 @@
 #include "grid_value_rect_item.h"
 #include "menu.h"
 #include "properties_widget.h"
+#include "solution_runner.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QHBoxLayout* layout = new QHBoxLayout();
@@ -40,6 +41,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setCentralWidget(main_widget);
 
     setGeometry(400, 200, 840, 480);
+
+    SolutionRunner::Run();
 
     GridDataProcessor* processor = new GridDataProcessor(grid_item, 402, 202, 99, 100);
     processor->Start();

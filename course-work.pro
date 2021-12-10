@@ -24,6 +24,7 @@ SOURCES += \
     menu.cpp \
     properties_item.cpp \
     properties_widget.cpp \
+    solution_runner.cpp
 
 HEADERS += \
     grid_data_loader.h \
@@ -33,6 +34,7 @@ HEADERS += \
     menu.h \
     properties_item.h \
     properties_widget.h \
+    solution_runner.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
