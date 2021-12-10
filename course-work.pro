@@ -16,6 +16,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    grid_data_loader.cpp \
     grid_data_processor.cpp \
     grid_value_rect_item.cpp \
     main.cpp \
@@ -23,14 +24,17 @@ SOURCES += \
     menu.cpp \
     properties_item.cpp \
     properties_widget.cpp \
+    solution_runner.cpp
 
 HEADERS += \
+    grid_data_loader.h \
     grid_data_processor.h \
     grid_value_rect_item.h \
     main_window.h \
     menu.h \
     properties_item.h \
     properties_widget.h \
+    solution_runner.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
