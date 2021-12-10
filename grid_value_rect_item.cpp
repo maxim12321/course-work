@@ -67,18 +67,6 @@ void GridValueRectItem::SetGridValues(const QVector<QVector<qreal>>& grid_values
 }
 
 QColor GridValueRectItem::BlendColors(const QVector<QColor>& colors) {
-//    QVector2D total(0, 0);
-//    for (const QColor& color: colors) {
-//        total += QVector2D(1, 0) * qCos(color.hueF() * 2 * M_PI) * color.alphaF();
-//        total += QVector2D(0, 1) * qSin(color.hueF() * 2 * M_PI) * color.alphaF();
-//    }
-//    total.normalize();
-
-//    qreal hue = qAtan2(total.y(), total.x());
-//    hue /= M_PI * 2;
-//    if (hue < 0) {
-//        hue += 1;
-//    }
     qreal total_hue = 0;
     qreal total_alpha = 0;
     for (const QColor& color: colors) {
