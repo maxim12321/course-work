@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include "menu.h"
 #include "properties_widget.h"
+#include "grid_data_processor.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -14,8 +15,10 @@ public:
 
 private slots:
     void SaveProperties();
+    void ComputeTask();
 
 private:
     Menu* menu_;
     PropertiesWidget* properties_;
+    GridDataProcessor* processor_;
 };

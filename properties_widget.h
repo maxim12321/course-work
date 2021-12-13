@@ -12,8 +12,6 @@ public:
     ~PropertiesWidget() = default;
 
     void SaveToFile(const QString& file_name);
-
-public slots:
     void CreateInputForSolver();
 
 private:
@@ -21,7 +19,7 @@ private:
         {"tool", "tool_properties.dat", "inp_Tool.dat"},
         {"plate", "plate_material_properties.dat", "inp_Plast.dat"},
         {"backing", "backing_material_properties.dat", "inp_Sub.dat"},
-        {"heat_exchange", "heat_exchange_properties.dat", "inp_CoeffToBound.dat"},
+        {"heat_exchange", "heat_exchange_properties.dat", "inp_CoeftoBound.dat"},
         {"method", "numerical_method_properties.dat", "inp_method.dat"},
     };
 

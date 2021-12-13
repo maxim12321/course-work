@@ -11,24 +11,32 @@
 #include "menu.h"
 #include "properties_widget.h"
 #include "solution_runner.h"
+#include "plots_widget.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QHBoxLayout* layout = new QHBoxLayout();
 
+    QVBoxLayout* visual_layout = new QVBoxLayout();
+
     QGraphicsScene* scene = new QGraphicsScene(0, 0, 512, 512, this);
     GridValueRectItem* grid_item = new GridValueRectItem(0, 0, 512, 512);
     scene->addItem(grid_item);
-
     QGraphicsView* view = new QGraphicsView(scene, this);
+
     view->scale(2, 2);
-    layout->addWidget(view);
+    visual_layout->addWidget(view);
+
+    PlotsWidget* plots = new PlotsWidget();
+//    visual_layout->addWidget(plots);
+
+    layout->addLayout(visual_layout);
 
     QVBoxLayout* properties_layout = new QVBoxLayout();
     properties_ = new PropertiesWidget(this);
     properties_layout->addWidget(properties_);
 
     QPushButton* compute_button = new QPushButton("Вычислить", this);
-    connect(compute_button, SIGNAL (released()), properties_, SLOT (CreateInputForSolver()));
+    connect(compute_button, SIGNAL (released()), this, SLOT (ComputeTask()));
     properties_layout->addWidget(compute_button);
 
     layout->addLayout(properties_layout);
@@ -42,10 +50,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     setGeometry(400, 200, 840, 480);
 
-    SolutionRunner::Run();
-
-    GridDataProcessor* processor = new GridDataProcessor(grid_item, 402, 202, 99, 100);
-    processor->Start();
+    processor_ = new GridDataProcessor(grid_item, plots, 402, 202, 99, 100);
 }
 
 void MainWindow::SaveProperties() {
@@ -54,4 +59,10 @@ void MainWindow::SaveProperties() {
         return;
     }
     properties_->SaveToFile(filename);
+}
+
+void MainWindow::ComputeTask() {
+    properties_->CreateInputForSolver();
+    SolutionRunner::Run();
+    processor_->Start();
 }

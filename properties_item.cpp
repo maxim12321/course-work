@@ -22,7 +22,7 @@ void PropertiesItem::CreateFromFile() {
 
     setText(file.readLine().trimmed());
 
-    int max_name_width = 0;
+    qsizetype max_name_width = 0;
     while (!file.atEnd()) {
         QString params_line = file.readLine().trimmed();
         QStringList params = params_line.split('|');

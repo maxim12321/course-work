@@ -1,4 +1,5 @@
 QT       += core gui
+QT       += charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,6 +23,7 @@ SOURCES += \
     main.cpp \
     main_window.cpp \
     menu.cpp \
+    plots_widget.cpp \
     properties_item.cpp \
     properties_widget.cpp \
     solution_runner.cpp
@@ -32,6 +34,7 @@ HEADERS += \
     grid_value_rect_item.h \
     main_window.h \
     menu.h \
+    plots_widget.h \
     properties_item.h \
     properties_widget.h \
     solution_runner.h

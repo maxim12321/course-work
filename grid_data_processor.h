@@ -5,12 +5,13 @@
 
 #include "grid_data_loader.h"
 #include "grid_value_rect_item.h"
+#include "plots_widget.h"
 
 class GridDataProcessor : public QObject {
     Q_OBJECT
 
 public:
-    GridDataProcessor(GridValueRectItem* grid_item,
+    GridDataProcessor(GridValueRectItem* grid_item, PlotsWidget* plots,
                       int width, int height,
                       int total_steps, int timer_interval = 1000 / 30);
 
@@ -39,6 +40,8 @@ private:
 
 private:
     GridValueRectItem* grid_item_;
+    PlotsWidget* plots_;
+
     int total_steps_;
     int default_timer_interval_;
 
@@ -48,4 +51,5 @@ private:
 
     GridDataLoader data_loader_;
     QVector<QVector<qreal>> grid_data_;
+    QList<QPointF> plot_data_;
 };

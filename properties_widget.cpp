@@ -36,7 +36,7 @@ void PropertiesWidget::SaveToFile(const QString& file_name) {
 
 void PropertiesWidget::CreateInputForSolver() {
     for (const auto& property : property_to_item_.keys()) {
-        qDebug() << property << "\n";
+//        qDebug() << property << "\n";
         property_to_item_[property]->CreateInputForSolver();
     }
 }

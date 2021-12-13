@@ -2,12 +2,13 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <QDebug>
 
 GridDataLoader::GridDataLoader(int width, int height)
     : width_(width), height_(height) {}
 
-QVector<QVector<qreal>> GridDataLoader::LoadData() const {
-    QFile file(kOutputFileName);
+QVector<QVector<qreal>> GridDataLoader::LoadGridData() const {
+    QFile file(kGridFileName);
     if(!file.open(QIODevice::ReadOnly)) {
         throw std::runtime_error("error opening file: " + file.error());
     }
@@ -20,5 +21,27 @@ QVector<QVector<qreal>> GridDataLoader::LoadData() const {
             file_stream >> data[y][x];
         }
     }
+    return data;
+}
+
+QVector<QPointF> GridDataLoader::LoadPlotData() const {
+    QFile file(kPlotFileName);
+    if(!file.open(QIODevice::ReadOnly)) {
+        throw std::runtime_error("error opening file: " + file.error());
+    }
+
+    QList<QPointF> data;
+
+    while (!file.atEnd()) {
+        QString params_line = file.readLine().trimmed();
+        QStringList params = params_line.split("      ");
+
+        double x = params[0].trimmed().toDouble();
+        double temperature = params[1].trimmed().toDouble();
+
+        data.append(QPointF(x, temperature));
+    }
+
+    file.close();
     return data;
 }
