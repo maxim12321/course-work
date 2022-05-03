@@ -1,6 +1,6 @@
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 CONFIG += c++11
 
@@ -18,22 +18,24 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     grid_data_loader.cpp \
     grid_data_processor.cpp \
-    grid_value_rect_item.cpp \
+    heatmap.cpp \
     main.cpp \
     main_window.cpp \
     menu.cpp \
     properties_item.cpp \
     properties_widget.cpp \
+    qcustomplot.cpp \
     solution_runner.cpp
 
 HEADERS += \
     grid_data_loader.h \
     grid_data_processor.h \
-    grid_value_rect_item.h \
+    heatmap.h \
     main_window.h \
     menu.h \
     properties_item.h \
     properties_widget.h \
+    qcustomplot.h \
     solution_runner.h
 
 # Default rules for deployment.
