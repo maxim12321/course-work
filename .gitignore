@@ -7,8 +7,6 @@
 *.a
 *.la
 *.lai
-*.so
-*.so.*
 *.dll
 *.dylib
 
