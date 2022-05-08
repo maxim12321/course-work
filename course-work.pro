@@ -36,7 +36,10 @@ SOURCES += \
     menu.cpp \
     properties_item.cpp \
     properties_widget.cpp \
-    solution_runner.cpp
+    solution_runner.cpp \
+    solver/tridiagonal.cpp \
+    solver/utils/matrix.cpp \
+    solver/utils/vector.cpp
 
 HEADERS += \
     grid_data_loader.h \
@@ -46,7 +49,10 @@ HEADERS += \
     menu.h \
     properties_item.h \
     properties_widget.h \
-    solution_runner.h
+    solution_runner.h \
+    solver/tridiagonal.h \
+    solver/utils/matrix.h \
+    solver/utils/vector.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
