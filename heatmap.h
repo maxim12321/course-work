@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qcustomplot.h>
+#include <qcustomplot/qcustomplot.h>
 
 class Heatmap : public QCustomPlot {
 public:
