@@ -4,13 +4,13 @@
 #include <QTimer>
 
 #include "grid_data_loader.h"
-#include "grid_value_rect_item.h"
+#include "heatmap.h"
 
 class GridDataProcessor : public QObject {
     Q_OBJECT
 
 public:
-    GridDataProcessor(GridValueRectItem* grid_item,
+    GridDataProcessor(Heatmap* heatmap,
                       int width, int height,
                       int total_steps, int timer_interval = 1000 / 30);
 
@@ -38,7 +38,7 @@ private:
     void RerunTimer();
 
 private:
-    GridValueRectItem* grid_item_;
+    Heatmap* heatmap_;
     int total_steps_;
     int default_timer_interval_;
 

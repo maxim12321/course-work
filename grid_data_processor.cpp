@@ -2,10 +2,10 @@
 
 #include <QDebug>
 
-GridDataProcessor::GridDataProcessor(GridValueRectItem* grid_item,
+GridDataProcessor::GridDataProcessor(Heatmap* heatmap,
                                      int width, int height,
                                      int total_steps, int timer_interval)
-    : grid_item_(grid_item),
+    : heatmap_(heatmap),
       total_steps_(total_steps),
       default_timer_interval_(timer_interval),
       data_loader_(width, height) {
@@ -71,7 +71,7 @@ QVector<QVector<qreal>> GridDataProcessor::GetGridData(int) {
 }
 
 void GridDataProcessor::DisplayData() {
-    grid_item_->SetGridValues(grid_data_);
+    heatmap_->SetValues(grid_data_);
 }
 
 void GridDataProcessor::RerunTimer() {
