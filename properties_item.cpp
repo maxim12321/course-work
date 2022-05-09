@@ -6,8 +6,8 @@
 #include <QStandardItem>
 #include <QString>
 
-PropertiesItem::PropertiesItem(const QString& config_file_name, const QString& solver_input_file_name)
-    : QStandardItem(), config_file_name_(config_file_name), solver_input_file_name_(solver_input_file_name) {
+PropertiesItem::PropertiesItem(const QString& config_file_name)
+    : QStandardItem(), config_file_name_(config_file_name) {
     setEditable(false);
 
     CreateFromFile();
@@ -54,22 +54,13 @@ void PropertiesItem::CreateFromFile() {
     setSizeHint(QSize(max_name_width * 10, 10));
 }
 
-void PropertiesItem::CreateInputForSolver() {
-    if (!QDir(kInputFilePath).exists()) {
-        QDir().mkdir(kInputFilePath);
-    }
-    QFile file(kInputFilePath + solver_input_file_name_);
-    if(!file.open(QIODevice::WriteOnly)) {
-        qDebug() << "error opening file: " << file.error();
-        return;
-    }
-    QTextStream file_stream(&file);
-
+QList<double> PropertiesItem::GetValues() {
+    QList<double> values;
     for (int i = 0; i < rowCount(); ++i) {
-        file_stream << child(i, 1)->text() << "\n";
+        double value = child(i, 1)->text().toDouble();
+        values.append(value);
     }
-
-    file.close();
+    return values;
 }
 
 void PropertiesItem::SaveToFile(QTextStream& file_stream) {

@@ -28,6 +28,9 @@ private:
     PropertiesManager* properties_;
     Callback on_layer_ready_;
 
+    int nx_;
+    int nz_;
+
     Matrix temperature_;
 
     RowIterationSolver row_solver_;

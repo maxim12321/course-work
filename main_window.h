@@ -4,6 +4,7 @@
 #include "menu.h"
 #include "properties_widget.h"
 #include "heatmap.h"
+#include "solver/properties_manager.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -21,4 +22,5 @@ private:
     Heatmap* heatmap_;
     Menu* menu_;
     PropertiesWidget* properties_;
+    PropertiesManager properties_manager_;
 };

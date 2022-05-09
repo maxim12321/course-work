@@ -14,7 +14,11 @@ void Solver::Start() {
 }
 
 void Solver::Initialize() {
-    temperature_ = Matrix(10, 10);
+    // Using eps1, eps2 and sizes of objects compute grid size
+    nx_ = 10;
+    nz_ = 10;
+
+    temperature_ = properties_->InitializeGrids(nx_, nz_);
 }
 
 void Solver::CalculateNextLayer() {
