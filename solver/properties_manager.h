@@ -5,12 +5,19 @@
 
 #include <QObject>
 #include <QMap>
+#include <utility>
 
 class PropertiesManager {
     struct Material {
         double density;
         double heat_capacity;
         double thermal_conductivity;
+    };
+
+    enum class Object {
+        kBacking,
+        kPlate,
+        kTool,
     };
 
 public:
@@ -32,12 +39,15 @@ public:
 
     Matrix InitializeGrids(int nx, int nz);
 
-    double GetInitTemperature(double x, double z);
+    double GetInitTemperature(int x, int z);
     double GetDensity(double x, double z);
     double GetHeatCapacity(double x, double z);
     double GetThermalConductivity(double x, double z);
 
 private:
+    std::pair<double, double> GridToObjectPosition(int x, int z);
+    Object GetObjectInPositon(double x, double z);
+
     void LoadMaterials();
 
 private:
@@ -55,6 +65,12 @@ private:
     double backing_height_;
     double backing_init_temp_;
     Material backing_material_;
+
+    double total_height_;
+    double height_without_penetration_;
+    double total_length_;
+    double tool_start_;
+    double tool_finish_;
 
     // Tool properties
     double tool_radius_;
