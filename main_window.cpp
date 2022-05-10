@@ -11,7 +11,7 @@
 #include "properties_widget.h"
 #include "solution_runner.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manager_() {
     QHBoxLayout* layout = new QHBoxLayout();
 
     heatmap_ = new Heatmap(402, 202, this);
@@ -19,11 +19,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     layout->addWidget(heatmap_);
 
     QVBoxLayout* properties_layout = new QVBoxLayout();
-    properties_ = new PropertiesWidget(this);
+    properties_ = new PropertiesWidget(properties_manager_, this);
     properties_layout->addWidget(properties_);
 
     QPushButton* compute_button = new QPushButton("Вычислить", this);
-    connect(compute_button, SIGNAL (released()), properties_, SLOT (CreateInputForSolver()));
+//    connect(compute_button, SIGNAL (released()), properties_, SLOT (CreateInputForSolver()));
+    connect(compute_button, SIGNAL (released()), properties_, SLOT (ConfigManager()));
     properties_layout->addWidget(compute_button);
 
     layout->addLayout(properties_layout);
@@ -37,7 +38,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     setGeometry(400, 200, 840, 480);
 
-    SolutionRunner::Run();
+//    SolutionRunner::Run();
 
     GridDataProcessor* processor = new GridDataProcessor(heatmap_, 402, 202, 99, 100);
     processor->Start();

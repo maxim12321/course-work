@@ -37,6 +37,10 @@ SOURCES += \
     properties_item.cpp \
     properties_widget.cpp \
     solution_runner.cpp \
+    solver/column_iteration_solver.cpp \
+    solver/properties_manager.cpp \
+    solver/row_iteration_solver.cpp \
+    solver/solver.cpp \
     solver/tridiagonal.cpp \
     solver/utils/matrix.cpp \
     solver/utils/vector.cpp
@@ -50,6 +54,10 @@ HEADERS += \
     properties_item.h \
     properties_widget.h \
     solution_runner.h \
+    solver/column_iteration_solver.h \
+    solver/properties_manager.h \
+    solver/row_iteration_solver.h \
+    solver/solver.h \
     solver/tridiagonal.h \
     solver/utils/matrix.h \
     solver/utils/vector.h
