@@ -39,7 +39,13 @@ public:
 
     Matrix InitializeGrids(int nx, int nz);
 
+    double GetDeltaT();
+
+    double GetDeltaX(int i);
+    double GetDeltaZ(int i);
+
     double GetInitTemperature(int x, int z);
+
     double GetDensity(double x, double z);
     double GetHeatCapacity(double x, double z);
     double GetThermalConductivity(double x, double z);

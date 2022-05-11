@@ -251,3 +251,14 @@ double PropertiesManager::GetHeatCapacity(double x, double z) {
         return tool_material_.heat_capacity;
     }
 }
+
+double PropertiesManager::GetDeltaT() {
+    return delta_t_;
+}
+
+double PropertiesManager::GetDeltaX(int i) {
+    return delta_x_[i];
+}
+double PropertiesManager::GetDeltaZ(int i) {
+    return delta_z_[i];
+}
