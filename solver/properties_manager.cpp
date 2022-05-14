@@ -1,10 +1,11 @@
-#include "properties_manager.h"
+﻿#include "properties_manager.h"
 
 #include <QDebug>
 #include <QFile>
 #include <QStringList>
 #include <QString>
 #include <cmath>
+#include <utility>
 
 PropertiesManager::PropertiesManager() {
     LoadMaterials();
@@ -39,95 +40,84 @@ void PropertiesManager::LoadMaterials() {
     file.close();
 }
 
-std::pair<double, double> PropertiesManager::GridToObjectPosition(int x, int z) {
-    double left_x = 0;
-    double right_x = 0;
-    double down_z = 0;
-    double up_z;
-
-    for (int i = 0; i <= x; ++i) {
-        left_x = right_x;
-        right_x += i < delta_x_.GetSize() ? delta_x_[i] : 0;
+std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vector &delta, Vector borders) {
+    long double remainder = 0;
+    long double curr_pos = 0;
+    
+    int j = 0;
+    for (int i = 1; i <= n; ++i) {
+        delta[i] = std::min(dx + remainder, borders[j] - curr_pos);
+        if (delta[i] < 1e-9) {
+            borders[j] = i - 1;
+            ++j;
+            if (j == borders.GetSize()) {
+                assert(i == n);
+            }
+            --i;
+            continue;
+        }
+        remainder = dx - delta[i];
+        curr_pos += delta[i];
     }
-    for (int i = 0; i <= z; ++i) {
-        down_z = up_z;
-        up_z += i < delta_z_.GetSize() ? delta_z_[i] : 0;
-    }
-
-    return std::make_pair((left_x + right_x) / 2, (down_z + up_z) / 2);
-}
-
-PropertiesManager::Object PropertiesManager::GetObjectInPositon(double x, double z) {
-    int floor_x = std::floor(x);
-    int ceil_x = std::ceil(x);
-    int floor_z = std::floor(z);
-    int ceil_z = std::ceil(z);
-
-    double dx = x - static_cast<double>(floor_x);
-    double dz = z - static_cast<double>(floor_z);
-
-    auto floor_pos = GridToObjectPosition(floor_x, floor_z);
-    std::pair<double, double> ceil_pos;
-    if (floor_x == ceil_x && floor_z == ceil_z) {
-        ceil_pos = floor_pos;
-    } else {
-        ceil_pos = GridToObjectPosition(ceil_x, ceil_z);
-    }
-
-
-    double pos_x = floor_pos.first * (1 - dx) + ceil_pos.first * dx;
-    double pos_z = floor_pos.second * (1 - dz) + ceil_pos.second * dz;
-
-    if (pos_z < backing_height_ || std::fabs(backing_height_ - pos_z) < 1e-9) {
-        return Object::kBacking;
-    } else if (pos_z < height_without_penetration_ || std::fabs(height_without_penetration_ - pos_z) < 1e-9){
-        return Object::kPlate;
-    } else if (pos_x < tool_start_ || pos_x > tool_finish_) {
-        return Object::kPlate;
-    } else {
-        return Object::kTool;
-    }
+    return std::make_pair(static_cast<int>(borders[0]), static_cast<int>(borders[1]));
 }
 
 Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
     total_length_ = std::max(plate_lenght_, backing_length_);
-    // + 1 according to enumeration in doc
-    delta_x_ = Vector(nx + 1, total_length_ / nx);
-    delta_x_[0] = 0;
-
-    total_height_ = plate_height_ + backing_height_;
-    delta_z_ = Vector(nz + 1, total_height_ / nz);
-    delta_z_[0] = 0;
-
+    total_height_ = plate_height_ + backing_height_;    
     height_without_penetration_ = total_height_ - tool_penetration_depth_;
+    
     tool_start_ = total_length_ / 2 - tool_radius_;
     tool_finish_ = total_length_ / 2 + tool_radius_;
+    
+    // + 2 according to enumeration in doc
+    delta_x_ = Vector(nx + 2);
+    auto hor_indxs = ComputeDeltas(nx, total_length_ / nx, delta_x_, {tool_start_, tool_finish_, total_length_});
+    i_tool_start_ = hor_indxs.first;
+    i_tool_finish_ = hor_indxs.second;
+    
+    delta_z_ = Vector(nz + 2);
+    auto vert_indxs = ComputeDeltas(nz, total_height_ / nz, delta_z_, {backing_height_, height_without_penetration_, total_height_});
+    i_plate_start_ = vert_indxs.first;
+    i_tool_bottom_start_ = vert_indxs.second;
+    
+    tool_wave_height_ = tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];
 
     // + 2 because there are nodes on borders;
-    init_temp_ = Matrix(nx + 2, nz + 2);
-
+    Matrix init_temp(nx + 2, nz + 2);
+    heat_capacity_grid_ = Matrix(nx + 2, nz + 2);
+    density_grid_ = Matrix(nx + 2, nz + 2);
+    thermal_conductivity_grid_ = Matrix(nx + 2, nz + 2);
     for (size_t x = 0; x < nx + 2; ++x) {
         for (size_t z = 0; z < nz + 2; ++z) {
-            auto object = GetObjectInPositon(x, z);
-
-            switch (object) {
-            case Object::kPlate:
-                init_temp_[x][z] = plate_init_temp_;
-                break;
-            case Object::kBacking:
-                init_temp_[x][z] = backing_init_temp_;
-                break;
-            case Object::kTool:
-                init_temp_[x][z] = tool_init_temp_;
-                break;
+            if (z <= i_plate_start_) {
+                init_temp[x][z] = backing_init_temp_;
+                heat_capacity_grid_[x][z] = backing_material_.heat_capacity;
+                density_grid_[x][z] = backing_material_.density;
+                thermal_conductivity_grid_[x][z] = backing_material_.thermal_conductivity;
+            } else if (z <= i_tool_bottom_start_) {
+                init_temp[x][z] = plate_init_temp_;
+                heat_capacity_grid_[x][z] = plate_material_.heat_capacity;
+                density_grid_[x][z] = plate_material_.density;
+                thermal_conductivity_grid_[x][z] = plate_material_.thermal_conductivity;
+            } else if (x <= i_tool_start_ || x > i_tool_finish_) {
+                init_temp[x][z] = plate_init_temp_;
+                heat_capacity_grid_[x][z] = plate_material_.heat_capacity;
+                density_grid_[x][z] = plate_material_.density;
+                thermal_conductivity_grid_[x][z] = plate_material_.thermal_conductivity;
+            } else {
+                init_temp[x][z] = tool_init_temp_;
+                heat_capacity_grid_[x][z] = tool_material_.heat_capacity;
+                density_grid_[x][z] = tool_material_.density;
+                thermal_conductivity_grid_[x][z] = tool_material_.thermal_conductivity;
             }
-
         }
     }
 
-    return init_temp_;
+    return init_temp;
 }
 
+// Properties setters
 void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int material) {
     if (materials_.count(material) == 0) {
         qDebug() << "Unknown plate material!";
@@ -138,7 +128,6 @@ void PropertiesManager::SetPlateProperties(double length, double height, double 
     plate_height_ = height;
     plate_init_temp_ = init_temp;
 }
-
 void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int material) {
     if (materials_.count(material) == 0) {
         qDebug() << "Unknown backing material!";
@@ -149,7 +138,6 @@ void PropertiesManager::SetBackingProperties(double length, double height, doubl
     backing_height_ = height;
     backing_init_temp_ = init_temp;
 }
-
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
                                          double angular_velo, double friction_coef, double f_z, double f_x, int material) {
     if (materials_.count(material) == 0) {
@@ -166,7 +154,6 @@ void PropertiesManager::SetToolProperties(double radius, double height, double p
     f_z_ = f_z;
     f_x_ = f_x;
 }
-
 void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double eps2, int max_iter_count, int time_layers_count, int tool_words) {
     delta_t_ = delta_t;
     eps1_ = eps1;
@@ -174,7 +161,6 @@ void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double 
     max_iter_ = max_iter_count;
     tool_words_ = tool_words;
 }
-
 void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2, double alpha_3, double alpha_4, double alpha_4_tool, double out_temp) {
     alpha1_ = alpha_1;
     alpha2_ = alpha_2;
@@ -184,22 +170,20 @@ void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2,
     out_temp_ = out_temp;
 }
 
+
+// Alpha getters
 double PropertiesManager::GetAlpha1() {
     return alpha1_;
 }
-
 double PropertiesManager::GetAlpha2() {
     return alpha2_;
 }
-
 double PropertiesManager::GetAlpha3() {
     return alpha3_;
 }
-
 double PropertiesManager::GetAlpha4() {
     return alpha4_;
 }
-
 double PropertiesManager::GetAlpha4Tool() {
     return alpha4_tool_;
 }
@@ -208,57 +192,100 @@ double PropertiesManager::GetOutTemperature() {
     return out_temp_;
 }
 
-
-double PropertiesManager::GetInitTemperature(int x, int z) {
-    return init_temp_[x][z];
+// Physical properties getters
+double PropertiesManager::GetDensity(int x, int z) {
+    return density_grid_[x][z];
 }
-
-double PropertiesManager::GetDensity(double x, double z) {
-    auto object = GetObjectInPositon(x, z);
-
-    switch (object) {
-    case Object::kPlate:
-        return plate_material_.density;
-    case Object::kBacking:
-        return backing_material_.density;
-    case Object::kTool:
-        return tool_material_.density;
-    }
+double PropertiesManager::GetHeatCapacity(int x, int z) {
+    return heat_capacity_grid_[x][z];
 }
-
 double PropertiesManager::GetThermalConductivity(double x, double z) {
-    auto object = GetObjectInPositon(x, z);
+    int x1 = std::floor(x);
+    int x2 = std::ceil(x);
 
-    switch (object) {
-    case Object::kPlate:
-        return plate_material_.thermal_conductivity;
-    case Object::kBacking:
-        return backing_material_.thermal_conductivity;
-    case Object::kTool:
-        return tool_material_.thermal_conductivity;
+    int z1 = std::floor(z);
+    int z2 = std::ceil(z);
+
+    double int_part;
+    if (std::modf(x, &int_part) == 0.0) {
+        x1 = static_cast<int>(int_part);
+        x2 = x1;
+    } else if (std::modf(z, &int_part) == 0.0) {
+        z1 = static_cast<int>(int_part);
+        z2 = z1;
+    } else {
+        qDebug() << "Oh, something wrong in indexes for thermal condactivity: " << x << z;
     }
+
+    return 2 * thermal_conductivity_grid_[x1][z1] * thermal_conductivity_grid_[x2][z2] / (thermal_conductivity_grid_[x1][z1] + thermal_conductivity_grid_[x2][z2]);
 }
 
-double PropertiesManager::GetHeatCapacity(double x, double z) {
-    auto object = GetObjectInPositon(x, z);
-
-    switch (object) {
-    case Object::kPlate:
-        return plate_material_.heat_capacity;
-    case Object::kBacking:
-        return backing_material_.heat_capacity;
-    case Object::kTool:
-        return tool_material_.heat_capacity;
-    }
-}
-
+// Delta getters
 double PropertiesManager::GetDeltaT() {
     return delta_t_;
 }
-
 double PropertiesManager::GetDeltaX(int i) {
     return delta_x_[i];
 }
+double PropertiesManager::GetDeltaBackX(int i) {
+    double current = delta_x_[i];
+    double next = i + 1 < delta_x_.GetSize() ? delta_x_[i + 1] : current;
+    return (current + next) / 2;
+}
 double PropertiesManager::GetDeltaZ(int i) {
     return delta_z_[i];
+}
+double PropertiesManager::GetDeltaBackZ(int i) {
+    double current = delta_z_[i];
+    double next = i + 1 < delta_z_.GetSize() ? delta_z_[i + 1] : current;
+    return (current + next) / 2;
+}
+
+
+// Tool getters
+double PropertiesManager::GetToolHeight() {
+    return tool_height_;
+}
+double PropertiesManager::GetToolPenetration() {
+    return tool_penetration_depth_;
+}
+double PropertiesManager::GetToolWaveHeight() {
+    return tool_wave_height_;
+}
+double PropertiesManager::GetToolInitTemperature() {
+    return tool_init_temp_;
+}
+int PropertiesManager::GetToolStartI() {
+    return i_tool_start_;
+}
+int PropertiesManager::GetToolFinishI() {
+    return i_tool_finish_;
+}
+
+// Heat getters
+double PropertiesManager::GetHeatOutput1() {
+    return 0;
+}
+double PropertiesManager::GetHeatOutput2() {
+    return 0;
+}
+double PropertiesManager::GetHeatOutput3() {
+    return 0;
+}
+double PropertiesManager::GetHeatX(int x, int z) {
+    return 0;
+}
+double PropertiesManager::GetHeatZ(int x, int z) {
+    return 0;
+}
+
+// Method getters
+double PropertiesManager::GetEpsilon1() {
+    return eps1_;
+}
+double PropertiesManager::GetEpsilon2() {
+    return eps2_;
+}
+int PropertiesManager::GetMaxIterations() {
+    return max_iter_;
 }
