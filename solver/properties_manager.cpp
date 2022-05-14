@@ -273,10 +273,30 @@ double PropertiesManager::GetHeatOutput3() {
     return 0;
 }
 double PropertiesManager::GetHeatX(int x, int z) {
+    // Ignoring node in tool
+    if (z < i_tool_bottom_start_) {
+        return 0;
+    }
+
+    if (x == i_tool_start_) {
+        return GetHeatOutput1() / delta_x_[x];
+    }
+    if (x == i_tool_finish_ + 1) {
+        return GetHeatOutput2() / delta_x_[x];
+    }
+
     return 0;
 }
 double PropertiesManager::GetHeatZ(int x, int z) {
-    return 0;
+    // Ignoring node in tool
+    if (z != i_tool_bottom_start_) {
+        return 0;
+    }
+    if (x < i_tool_start_ || x > i_tool_finish_ + 2) {
+        return 0;
+    }
+
+    return GetHeatOutput3() / delta_z_[z];
 }
 
 // Method getters

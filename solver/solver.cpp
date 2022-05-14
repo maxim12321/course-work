@@ -26,13 +26,16 @@ void Solver::CalculateNextLayer() {
     double eps = 0;
     do {
         Matrix semi_next = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
-        current_temp_ = column_solver_.CalculateNextIteration(current_temp_, semi_next);
+        Matrix next_temp_ = column_solver_.CalculateNextIteration(current_temp_, semi_next);
         ++iteration;
 
         for (int i = 0; i < current_temp_.GetRowCount(); ++i) {
             for (int j = 0; j < current_temp_.GetColumnCount(); ++j) {
-                double delta = std::fabs(current_temp_[i][j] - previous_temp_[i][j]);
+                double delta = std::fabs(current_temp_[i][j] - next_temp_[i][j]);
                 eps = std::max(eps, delta);
+
+                // Replace current_temp for next iterations;
+                current_temp_[i][j] = next_temp_[i][j];
             }
         }
     } while (eps > properties_->GetEpsilon1() || iteration < properties_->GetMaxIterations());
