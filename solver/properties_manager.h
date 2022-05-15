@@ -25,6 +25,8 @@ public:
 
     void SetHeatExchangePropeties(double alpha_1, double alpha_2, double alpha_3, double alpha_4, double alpha_4_tool, double out_temp);
 
+    void PrintAllProperties();
+
     double GetAlpha1();
     double GetAlpha2();
     double GetAlpha3();

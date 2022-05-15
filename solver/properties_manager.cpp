@@ -160,6 +160,7 @@ void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double 
     eps2_ = eps2;
     max_iter_ = max_iter_count;
     tool_words_ = tool_words;
+    time_layers_ = time_layers_count;
 }
 void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2, double alpha_3, double alpha_4, double alpha_4_tool, double out_temp) {
     alpha1_ = alpha_1;
@@ -170,6 +171,53 @@ void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2,
     out_temp_ = out_temp;
 }
 
+
+void PropertiesManager::PrintAllProperties() {
+    qDebug() << "--- Method ---";
+    qDebug() << "Delta t = " << delta_t_;
+    qDebug() << "Eps1 = " << eps1_;
+    qDebug() << "Eps2 = " << eps2_;
+    qDebug() << "Max iter = " << max_iter_;
+    qDebug() << "Time layers = " << time_layers_;
+    qDebug() << "Tool layers = " << tool_words_;
+    qDebug() << "";
+    qDebug() << "--- Plate ---";
+    qDebug() << "Height = " << plate_height_;
+    qDebug() << "Length = " << plate_lenght_;
+    qDebug() << "Init temp = " << plate_init_temp_;
+    qDebug() << "Density = " << plate_material_.density;
+    qDebug() << "Heat capacity = " << plate_material_.heat_capacity;
+    qDebug() << "Thermal cond = " << plate_material_.thermal_conductivity;
+    qDebug() << "";
+    qDebug() << "--- Backing ---";
+    qDebug() << "Height = " << backing_height_;
+    qDebug() << "Length = " << backing_length_;
+    qDebug() << "Init temp = " << backing_init_temp_;
+    qDebug() << "Density = " << backing_material_.density;
+    qDebug() << "Heat capacity = " << backing_material_.heat_capacity;
+    qDebug() << "Thermal cond = " << backing_material_.thermal_conductivity;
+    qDebug() << "";
+    qDebug() << "--- Tool ---";
+    qDebug() << "Height = " << tool_height_;
+    qDebug() << "Length = " << tool_radius_;
+    qDebug() << "Penetration = " << tool_penetration_depth_;
+    qDebug() << "Angular Velo = " << tool_angular_velo_;
+    qDebug() << "Friction = " << friction_coef_;
+    qDebug() << "Fx = " << f_x_;
+    qDebug() << "Fz = " << f_z_;
+    qDebug() << "Init temp = " << tool_init_temp_;
+    qDebug() << "Density = " << tool_material_.density;
+    qDebug() << "Heat capacity = " << tool_material_.heat_capacity;
+    qDebug() << "Thermal cond = " << tool_material_.thermal_conductivity;
+    qDebug() << "";
+    qDebug() << "--- Heat Exchange ---";
+    qDebug() << "alpha1 = " << alpha1_;
+    qDebug() << "alpha2 = " << alpha2_;
+    qDebug() << "alpha3 = " << alpha3_;
+    qDebug() << "alpha4 = " << alpha4_;
+    qDebug() << "alpha4_tool = " << alpha4_tool_;
+    qDebug() << "Out temp = " << out_temp_;
+}
 
 // Alpha getters
 double PropertiesManager::GetAlpha1() {

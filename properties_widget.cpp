@@ -67,4 +67,6 @@ void PropertiesWidget::ConfigManager() {
 
     auto heat_exch_props = heat_exch_properties_->GetValues();
     manager_.SetHeatExchangePropeties(heat_exch_props[0], heat_exch_props[1], heat_exch_props[2], heat_exch_props[3], heat_exch_props[4], heat_exch_props[5]);
+
+    manager_.PrintAllProperties();
 }
