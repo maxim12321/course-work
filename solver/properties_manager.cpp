@@ -12,32 +12,36 @@ PropertiesManager::PropertiesManager() {
 }
 
 void PropertiesManager::LoadMaterials() {
-    QFile file(kMaterialsConfigFile);
-    if(!file.open(QIODevice::ReadOnly)) {
-        qDebug() << "error opening file: " << file.error();
-        return;
-    }
+//    QFile file(kMaterialsConfigFile);
+//    if(!file.open(QIODevice::ReadOnly)) {
+//        qDebug() << "error opening file: " << file.error();
+//        return;
+//    }
 
-    file.readLine();
-    while (!file.atEnd()) {
-        QString line = file.readLine().trimmed();
-        QStringList properties = line.split(" ");
+//    file.readLine();
+//    while (!file.atEnd()) {
+//        QString line = file.readLine().trimmed();
+//        QStringList properties = line.split(" ");
 
-        if (properties.empty() || (properties.size() == 1 && properties[0].trimmed().isEmpty())) {
-            continue;
-        }
-        if (properties.size() != 4) {
-            qDebug() << "Wrong line in materials file\n";
-            continue;
-        }
+//        if (properties.empty() || (properties.size() == 1 && properties[0].trimmed().isEmpty())) {
+//            continue;
+//        }
+//        if (properties.size() != 4) {
+//            qDebug() << "Wrong line in materials file\n";
+//            continue;
+//        }
 
-        int material_id = properties[0].toInt();
-        materials_[material_id].density = properties[1].toDouble();
-        materials_[material_id].heat_capacity = properties[2].toDouble();
-        materials_[material_id].thermal_conductivity = properties[3].toDouble();
-    }
+//        int material_id = properties[0].toInt();
+//        materials_[material_id].density = properties[1].toDouble();
+//        materials_[material_id].heat_capacity = properties[2].toDouble();
+//        materials_[material_id].thermal_conductivity = properties[3].toDouble();
+//    }
 
-    file.close();
+//    file.close();
+
+    materials_[backing_material_.GetId()] = &backing_material_;
+    materials_[plate_material_.GetId()] = &plate_material_;
+    materials_[tool_material_.GetId()] = &tool_material_;
 }
 
 std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vector &delta, Vector borders) {
@@ -85,31 +89,22 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 
     // + 2 because there are nodes on borders;
     Matrix init_temp(nx + 2, nz + 2);
-    heat_capacity_grid_ = Matrix(nx + 2, nz + 2);
-    density_grid_ = Matrix(nx + 2, nz + 2);
-    thermal_conductivity_grid_ = Matrix(nx + 2, nz + 2);
+    materials_grid_.fill(QVector<int>(nz + 2), nx + 2);
+
     for (size_t x = 0; x < nx + 2; ++x) {
         for (size_t z = 0; z < nz + 2; ++z) {
             if (z <= i_plate_start_) {
                 init_temp[x][z] = backing_init_temp_;
-                heat_capacity_grid_[x][z] = backing_material_.heat_capacity;
-                density_grid_[x][z] = backing_material_.density;
-                thermal_conductivity_grid_[x][z] = backing_material_.thermal_conductivity;
+                materials_grid_[x][z] = backing_material_.GetId();
             } else if (z <= i_tool_bottom_start_) {
                 init_temp[x][z] = plate_init_temp_;
-                heat_capacity_grid_[x][z] = plate_material_.heat_capacity;
-                density_grid_[x][z] = plate_material_.density;
-                thermal_conductivity_grid_[x][z] = plate_material_.thermal_conductivity;
+                materials_grid_[x][z] = plate_material_.GetId();
             } else if (x <= i_tool_start_ || x > i_tool_finish_) {
                 init_temp[x][z] = plate_init_temp_;
-                heat_capacity_grid_[x][z] = plate_material_.heat_capacity;
-                density_grid_[x][z] = plate_material_.density;
-                thermal_conductivity_grid_[x][z] = plate_material_.thermal_conductivity;
+                materials_grid_[x][z] = plate_material_.GetId();
             } else {
                 init_temp[x][z] = tool_init_temp_;
-                heat_capacity_grid_[x][z] = tool_material_.heat_capacity;
-                density_grid_[x][z] = tool_material_.density;
-                thermal_conductivity_grid_[x][z] = tool_material_.thermal_conductivity;
+                materials_grid_[x][z] = tool_material_.GetId();
             }
         }
     }
@@ -118,33 +113,35 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 }
 
 // Properties setters
-void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int material) {
-    if (materials_.count(material) == 0) {
-        qDebug() << "Unknown plate material!";
-        return;
-    }
-    plate_material_ = materials_[material];
+void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int /*material*/) {
+//    if (materials_.count(material) == 0) {
+//        qDebug() << "Unknown plate material!";
+//        return;
+//    }
+//    plate_material_ = materials_[material];
     plate_lenght_ = length;
     plate_height_ = height;
     plate_init_temp_ = init_temp;
 }
-void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int material) {
-    if (materials_.count(material) == 0) {
-        qDebug() << "Unknown backing material!";
-        return;
-    }
-    backing_material_ = materials_[material];
+
+void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int /*material*/) {
+//    if (materials_.count(material) == 0) {
+//        qDebug() << "Unknown backing material!";
+//        return;
+//    }
+//    backing_material_ = materials_[material];
     backing_length_ = length;
     backing_height_ = height;
     backing_init_temp_ = init_temp;
 }
+
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
-                                         double angular_velo, double friction_coef, double f_z, double f_x, int material) {
-    if (materials_.count(material) == 0) {
-        qDebug() << "Unknown tool material!";
-        return;
-    }
-    tool_material_ = materials_[material];
+                                         double angular_velo, double friction_coef, double f_z, double f_x, int /*material*/) {
+//    if (materials_.count(material) == 0) {
+//        qDebug() << "Unknown tool material!";
+//        return;
+//    }
+//    tool_material_ = materials_[material];
     tool_radius_ = radius;
     tool_height_ = height;
     tool_penetration_depth_ = penetration_depth;
@@ -154,6 +151,7 @@ void PropertiesManager::SetToolProperties(double radius, double height, double p
     f_z_ = f_z;
     f_x_ = f_x;
 }
+
 void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double eps2, int max_iter_count, int time_layers_count, int tool_words) {
     delta_t_ = delta_t;
     eps1_ = eps1;
@@ -162,6 +160,7 @@ void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double 
     tool_words_ = tool_words;
     time_layers_ = time_layers_count;
 }
+
 void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2, double alpha_3, double alpha_4, double alpha_4_tool, double out_temp) {
     alpha1_ = alpha_1;
     alpha2_ = alpha_2;
@@ -170,7 +169,6 @@ void PropertiesManager::SetHeatExchangePropeties(double alpha_1, double alpha_2,
     alpha4_tool_ = alpha_4_tool;
     out_temp_ = out_temp;
 }
-
 
 void PropertiesManager::PrintAllProperties() {
     qDebug() << "--- Method ---";
@@ -185,17 +183,17 @@ void PropertiesManager::PrintAllProperties() {
     qDebug() << "Height = " << plate_height_;
     qDebug() << "Length = " << plate_lenght_;
     qDebug() << "Init temp = " << plate_init_temp_;
-    qDebug() << "Density = " << plate_material_.density;
-    qDebug() << "Heat capacity = " << plate_material_.heat_capacity;
-    qDebug() << "Thermal cond = " << plate_material_.thermal_conductivity;
+    qDebug() << "Density = " << plate_material_.GetDensity().ApproximateAt(plate_init_temp_);
+    qDebug() << "Heat capacity = " << plate_material_.GetHeatCapacity().ApproximateAt(plate_init_temp_);
+    qDebug() << "Thermal cond = " << plate_material_.GetThermalConductivity().ApproximateAt(plate_init_temp_);
     qDebug() << "";
     qDebug() << "--- Backing ---";
     qDebug() << "Height = " << backing_height_;
     qDebug() << "Length = " << backing_length_;
     qDebug() << "Init temp = " << backing_init_temp_;
-    qDebug() << "Density = " << backing_material_.density;
-    qDebug() << "Heat capacity = " << backing_material_.heat_capacity;
-    qDebug() << "Thermal cond = " << backing_material_.thermal_conductivity;
+    qDebug() << "Density = " << backing_material_.GetDensity().ApproximateAt(backing_init_temp_);
+    qDebug() << "Heat capacity = " << backing_material_.GetHeatCapacity().ApproximateAt(backing_init_temp_);
+    qDebug() << "Thermal cond = " << backing_material_.GetThermalConductivity().ApproximateAt(backing_init_temp_);
     qDebug() << "";
     qDebug() << "--- Tool ---";
     qDebug() << "Height = " << tool_height_;
@@ -206,9 +204,9 @@ void PropertiesManager::PrintAllProperties() {
     qDebug() << "Fx = " << f_x_;
     qDebug() << "Fz = " << f_z_;
     qDebug() << "Init temp = " << tool_init_temp_;
-    qDebug() << "Density = " << tool_material_.density;
-    qDebug() << "Heat capacity = " << tool_material_.heat_capacity;
-    qDebug() << "Thermal cond = " << tool_material_.thermal_conductivity;
+    qDebug() << "Density = " << tool_material_.GetDensity().ApproximateAt(tool_init_temp_);
+    qDebug() << "Heat capacity = " << tool_material_.GetHeatCapacity().ApproximateAt(tool_init_temp_);
+    qDebug() << "Thermal cond = " << tool_material_.GetThermalConductivity().ApproximateAt(tool_init_temp_);
     qDebug() << "";
     qDebug() << "--- Heat Exchange ---";
     qDebug() << "alpha1 = " << alpha1_;
@@ -223,15 +221,19 @@ void PropertiesManager::PrintAllProperties() {
 double PropertiesManager::GetAlpha1() {
     return alpha1_;
 }
+
 double PropertiesManager::GetAlpha2() {
     return alpha2_;
 }
+
 double PropertiesManager::GetAlpha3() {
     return alpha3_;
 }
+
 double PropertiesManager::GetAlpha4() {
     return alpha4_;
 }
+
 double PropertiesManager::GetAlpha4Tool() {
     return alpha4_tool_;
 }
@@ -241,13 +243,19 @@ double PropertiesManager::GetOutTemperature() {
 }
 
 // Physical properties getters
-double PropertiesManager::GetDensity(int x, int z) {
-    return density_grid_[x][z];
+double PropertiesManager::GetDensity(int x, int z, const Matrix& temperatures) {
+    Material* material = materials_[materials_grid_[x][z]];
+    double temperature = temperatures[x][z];
+    return material->GetDensity().ApproximateAt(temperature);
 }
-double PropertiesManager::GetHeatCapacity(int x, int z) {
-    return heat_capacity_grid_[x][z];
+
+double PropertiesManager::GetHeatCapacity(int x, int z, const Matrix& temperatures) {
+    Material* material = materials_[materials_grid_[x][z]];
+    double temperature = temperatures[x][z];
+    return material->GetHeatCapacity().ApproximateAt(temperature);
 }
-double PropertiesManager::GetThermalConductivity(double x, double z) {
+
+double PropertiesManager::GetThermalConductivity(double x, double z, const Matrix& temperatures) {
     int x1 = std::floor(x);
     int x2 = std::ceil(x);
 
@@ -265,47 +273,63 @@ double PropertiesManager::GetThermalConductivity(double x, double z) {
         qDebug() << "Oh, something wrong in indexes for thermal condactivity: " << x << z;
     }
 
-    return 2 * thermal_conductivity_grid_[x1][z1] * thermal_conductivity_grid_[x2][z2] / (thermal_conductivity_grid_[x1][z1] + thermal_conductivity_grid_[x2][z2]);
+    Material* prev_material = materials_[materials_grid_[x1][z1]];
+    double prev_temp = temperatures[x1][z1];
+    double prev_value = prev_material->GetThermalConductivity().ApproximateAt(prev_temp);
+
+    Material* next_material = materials_[materials_grid_[x2][z2]];
+    double next_temp = temperatures[x2][z2];
+    double next_value = next_material->GetThermalConductivity().ApproximateAt(next_temp);
+
+    return 2 * prev_value * next_value / (prev_value + next_value);
 }
 
 // Delta getters
 double PropertiesManager::GetDeltaT() {
     return delta_t_;
 }
+
 double PropertiesManager::GetDeltaX(int i) {
     return delta_x_[i];
 }
+
 double PropertiesManager::GetDeltaBackX(int i) {
     double current = delta_x_[i];
     double next = i + 1 < delta_x_.GetSize() ? delta_x_[i + 1] : current;
     return (current + next) / 2;
 }
+
 double PropertiesManager::GetDeltaZ(int i) {
     return delta_z_[i];
 }
+
 double PropertiesManager::GetDeltaBackZ(int i) {
     double current = delta_z_[i];
     double next = i + 1 < delta_z_.GetSize() ? delta_z_[i + 1] : current;
     return (current + next) / 2;
 }
 
-
 // Tool getters
 double PropertiesManager::GetToolHeight() {
     return tool_height_;
 }
+
 double PropertiesManager::GetToolPenetration() {
     return tool_penetration_depth_;
 }
+
 double PropertiesManager::GetToolWaveHeight() {
     return tool_wave_height_;
 }
+
 double PropertiesManager::GetToolInitTemperature() {
     return tool_init_temp_;
 }
+
 int PropertiesManager::GetToolStartI() {
     return i_tool_start_;
 }
+
 int PropertiesManager::GetToolFinishI() {
     return i_tool_finish_;
 }
@@ -314,12 +338,15 @@ int PropertiesManager::GetToolFinishI() {
 double PropertiesManager::GetHeatOutput1() {
     return 0;
 }
+
 double PropertiesManager::GetHeatOutput2() {
     return 0;
 }
+
 double PropertiesManager::GetHeatOutput3() {
     return 0;
 }
+
 double PropertiesManager::GetHeatX(int x, int z) {
     // Ignoring node in tool
     if (z < i_tool_bottom_start_) {
@@ -335,6 +362,7 @@ double PropertiesManager::GetHeatX(int x, int z) {
 
     return 0;
 }
+
 double PropertiesManager::GetHeatZ(int x, int z) {
     // Ignoring node in tool
     if (z != i_tool_bottom_start_) {
@@ -351,9 +379,11 @@ double PropertiesManager::GetHeatZ(int x, int z) {
 double PropertiesManager::GetEpsilon1() {
     return eps1_;
 }
+
 double PropertiesManager::GetEpsilon2() {
     return eps2_;
 }
+
 int PropertiesManager::GetMaxIterations() {
     return max_iter_;
 }
