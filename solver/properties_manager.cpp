@@ -114,10 +114,6 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 
 // Properties setters
 void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int /*material*/) {
-//    if (materials_.count(material) == 0) {
-//        qDebug() << "Unknown plate material!";
-//        return;
-//    }
 //    plate_material_ = materials_[material];
     plate_lenght_ = length;
     plate_height_ = height;
@@ -125,10 +121,6 @@ void PropertiesManager::SetPlateProperties(double length, double height, double 
 }
 
 void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int /*material*/) {
-//    if (materials_.count(material) == 0) {
-//        qDebug() << "Unknown backing material!";
-//        return;
-//    }
 //    backing_material_ = materials_[material];
     backing_length_ = length;
     backing_height_ = height;
@@ -137,10 +129,6 @@ void PropertiesManager::SetBackingProperties(double length, double height, doubl
 
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
                                          double angular_velo, double friction_coef, double f_z, double f_x, int /*material*/) {
-//    if (materials_.count(material) == 0) {
-//        qDebug() << "Unknown tool material!";
-//        return;
-//    }
 //    tool_material_ = materials_[material];
     tool_radius_ = radius;
     tool_height_ = height;

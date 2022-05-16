@@ -10,12 +10,6 @@
 #include <utility>
 
 class PropertiesManager {
-//    struct Material {
-//        double density;
-//        double heat_capacity;
-//        double thermal_conductivity;
-//    };
-
 public:
     PropertiesManager();
 
@@ -73,7 +67,6 @@ private:
     void LoadMaterials();
     
 private:
-//    const QString kMaterialsConfigFile = "://resources/properties/materials";
     QMap<int, Material*> materials_;
 
     // Material ID for each cell
@@ -135,10 +128,6 @@ private:
     int time_layers_;
     int tool_words_;
 
-    // Grids for method
-//    Matrix density_grid_;
-//    Matrix heat_capacity_grid_;
-//    Matrix thermal_conductivity_grid_;
     Vector delta_x_;
     Vector delta_z_;
 };
