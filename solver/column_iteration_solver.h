@@ -7,7 +7,7 @@ class ColumnIterationSolver {
 public:
     explicit ColumnIterationSolver(PropertiesManager* properties);
 
-    // previous = T^{s}, semi_previous = T^{s+1/2} (from RowSolver)
+    // prev_iter = T^{s}, semi_previ_iter = T^{s+1/2} (from RowSolver)
     Matrix CalculateNextIteration(const Matrix& prev_iter,
                                   const Matrix& semi_prev_iter);
 
