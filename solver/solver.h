@@ -31,7 +31,8 @@ private:
     int nx_;
     int nz_;
 
-    Matrix temperature_;
+    Matrix current_temp_;
+    Matrix previous_temp_;
 
     RowIterationSolver row_solver_;
     ColumnIterationSolver column_solver_;

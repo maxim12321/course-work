@@ -8,10 +8,22 @@ public:
     explicit ColumnIterationSolver(PropertiesManager* properties);
 
     // previous = T^{s}, semi_previous = T^{s+1/2} (from RowSolver)
-    Matrix CalculateNextLayer(const Matrix& previous,
-                              const Matrix& semi_previous);
+    Matrix CalculateNextIteration(const Matrix& prev_iter,
+                                  const Matrix& semi_prev_iter);
 
 private:
+    void LeftColumn(const Matrix& prev_iter,
+                    const Matrix& semi_prev_iter,
+                    Vector& column);
+    void MiddleColumn(const Matrix& prev_iter,
+                      const Matrix& semi_prev_iter,
+                      Vector& column, int i);
+    void RightColumn(const Matrix& prev_iter,
+                     const Matrix& semi_prev_iter,
+                     Vector& column);
+
     PropertiesManager* properties_;
+    int N_;
+    int M_;
 };
 

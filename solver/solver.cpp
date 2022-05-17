@@ -14,17 +14,32 @@ void Solver::Start() {
 }
 
 void Solver::Initialize() {
-    // Using eps1, eps2 and sizes of objects compute grid size
     nx_ = 10;
     nz_ = 10;
 
-    temperature_ = properties_->InitializeGrids(nx_, nz_);
+    current_temp_ = properties_->InitializeGrids(nx_, nz_);
+    previous_temp_ = current_temp_;
 }
 
 void Solver::CalculateNextLayer() {
-    Matrix semi_next = row_solver_.CalculateNextLayer(temperature_);
-    Matrix next = column_solver_.CalculateNextLayer(temperature_, semi_next);
+    int iteration = 0;
+    double eps = 0;
+    do {
+        Matrix semi_next = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
+        Matrix next_temp_ = column_solver_.CalculateNextIteration(current_temp_, semi_next);
+        ++iteration;
 
-    temperature_ = next;
-    on_layer_ready_(next);
+        for (int i = 0; i < current_temp_.GetRowCount(); ++i) {
+            for (int j = 0; j < current_temp_.GetColumnCount(); ++j) {
+                double delta = std::fabs(current_temp_[i][j] - next_temp_[i][j]);
+                eps = std::max(eps, delta);
+
+                // Replace current_temp for next iterations;
+                current_temp_[i][j] = next_temp_[i][j];
+            }
+        }
+    } while (eps > properties_->GetEpsilon1() || iteration < properties_->GetMaxIterations());
+
+    previous_temp_ = current_temp_;
+    on_layer_ready_(current_temp_);
 }
