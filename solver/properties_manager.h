@@ -1,19 +1,15 @@
 #pragma once
 
+#include "material.h"
 #include "utils/matrix.h"
 #include "utils/vector.h"
 
-#include <QObject>
 #include <QMap>
+#include <QObject>
+#include <QVector>
 #include <utility>
 
 class PropertiesManager {
-    struct Material {
-        double density;
-        double heat_capacity;
-        double thermal_conductivity;
-    };
-
 public:
     PropertiesManager();
 
@@ -43,9 +39,9 @@ public:
     double GetDeltaZ(int i);
     double GetDeltaBackZ(int i);
 
-    double GetDensity(int x, int z);
-    double GetHeatCapacity(int x, int z);
-    double GetThermalConductivity(double x, double z);
+    double GetDensity(int x, int z, const Matrix& temperatures);
+    double GetHeatCapacity(int x, int z, const Matrix& temperatures);
+    double GetThermalConductivity(double x, double z, const Matrix& temperatures);
 
     double GetToolHeight();
     double GetToolPenetration();
@@ -71,20 +67,22 @@ private:
     void LoadMaterials();
     
 private:
-    const QString kMaterialsConfigFile = "://resources/properties/materials";
-    QMap<int, Material> materials_;
+    QMap<int, Material*> materials_;
+
+    // Material ID for each cell
+    QVector<QVector<int>> materials_grid_;
 
     // Plate properties
     double plate_lenght_;
     double plate_height_;
     double plate_init_temp_;
-    Material plate_material_;
+    Material plate_material_{2};
 
     // Backing properties
     double backing_length_;
     double backing_height_;
     double backing_init_temp_;
-    Material backing_material_;
+    Material backing_material_{1};
 
     double total_height_;
     double height_without_penetration_;
@@ -99,7 +97,7 @@ private:
     double tool_wave_height_;
     double tool_init_temp_;
     double tool_angular_velo_;
-    Material tool_material_;
+    Material tool_material_{3};
     double friction_coef_;
     double f_z_;
     double f_x_;
@@ -130,10 +128,6 @@ private:
     int time_layers_;
     int tool_words_;
 
-    // Grids for method
-    Matrix density_grid_;
-    Matrix heat_capacity_grid_;
-    Matrix thermal_conductivity_grid_;
     Vector delta_x_;
     Vector delta_z_;
 };

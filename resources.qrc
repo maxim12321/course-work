@@ -7,6 +7,8 @@
         <file>resources/properties/heat_exchange_properties.dat</file>
         <file>resources/solver/runner.sh</file>
         <file>resources/solver/solver.exe</file>
-        <file>resources/properties/materials</file>
+        <file>resources/properties/materials/1.dat</file>
+        <file>resources/properties/materials/2.dat</file>
+        <file>resources/properties/materials/3.dat</file>
     </qresource>
 </RCC>
