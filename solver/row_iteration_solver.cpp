@@ -187,13 +187,13 @@ void RowIterationSolver::TopRow(const Matrix& prev_iter, const Matrix& prev_laye
     // correct (Nx * Ib, M + 1) node
     {
         int i = properties_->GetToolStartI();
-        row[i] -= properties_->GetDeltaT() * properties_->GetHeatOutput1() / properties_->GetDeltaX(i);
+        row[i] -= properties_->GetDeltaT() * properties_->GetHeatX(i, M_);
     }
 
     // correct (Nx * If + 1, M + 1) node
     {
         int i = properties_->GetToolFinishI() + 1;
-        row[i] -= properties_->GetDeltaT() * properties_->GetHeatOutput2() / properties_->GetDeltaX(i);
+        row[i] -= properties_->GetDeltaT() * properties_->GetHeatX(i, M_);
     }
 
 
@@ -230,7 +230,7 @@ void RowIterationSolver::TopRow(const Matrix& prev_iter, const Matrix& prev_laye
                              properties_->GetAlpha4();
 
         row[i] -= properties_->GetDeltaT() / (properties_->GetDeltaX(i) * properties_->GetToolWaveHeight()) * (
-                    0.25 * properties_->GetDeltaZ(M_) * properties_->GetHeatOutput1() +
+                    0.25 * properties_->GetDeltaZ(M_) * properties_->GetHeatOutputX() +
                     (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() * properties_->GetOutTemperature()
                 );
     }
@@ -247,7 +247,7 @@ void RowIterationSolver::TopRow(const Matrix& prev_iter, const Matrix& prev_laye
                              properties_->GetAlpha4();
 
         row[i] -= properties_->GetDeltaT() / (properties_->GetDeltaX(i) * properties_->GetToolWaveHeight()) * (
-                    0.25 * properties_->GetDeltaZ(M_) * properties_->GetHeatOutput2() +
+                    0.25 * properties_->GetDeltaZ(M_) * properties_->GetHeatOutputX() +
                     (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() * properties_->GetOutTemperature()
                 );
     }

@@ -1,5 +1,7 @@
 #include "heatmap.h"
 
+#include <QDebug>
+
 Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), width_(width), height_(height) {
     setInteractions(QCP::iNone);
     axisRect()->setupFullAxesBox(true);
@@ -26,7 +28,14 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
     rescaleAxes();
 }
 
-void Heatmap::SetValues(const QVector<QVector<qreal>>& data) {
+void Heatmap::SetValues(const Matrix& data) {
+    for (int x = 0; x < width_; ++x) {
+        for (int y = 0; y < height_; ++y) {
+            qDebug() << qreal(data[y][x]);
+        }
+        qDebug() << "\n";
+    }
+
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {
             color_map_->data()->setCell(x, y, data[y][x]);

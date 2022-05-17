@@ -24,6 +24,8 @@ private:
     // invoke *on_layer_ready_* callback
     void CalculateNextLayer();
 
+    bool HasConverged(const Matrix& current, const Matrix& next);
+
 private:
     PropertiesManager* properties_;
     Callback on_layer_ready_;

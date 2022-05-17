@@ -79,7 +79,14 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
     auto hor_indxs = ComputeDeltas(nx, total_length_ / nx, delta_x_, {tool_start_, tool_finish_, total_length_});
     i_tool_start_ = hor_indxs.first;
     i_tool_finish_ = hor_indxs.second;
-    
+
+    double current_x_position = 0;
+    x_position_ = Vector(nx + 2);
+    for (size_t i = 0; i < nx + 2; ++i) {
+        x_position_[i] = current_x_position + delta_x_[i] / 2;
+        current_x_position += delta_x_[i];
+    }
+
     delta_z_ = Vector(nz + 2);
     auto vert_indxs = ComputeDeltas(nz, total_height_ / nz, delta_z_, {backing_height_, height_without_penetration_, total_height_});
     i_plate_start_ = vert_indxs.first;
@@ -323,16 +330,22 @@ int PropertiesManager::GetToolFinishI() {
 }
 
 // Heat getters
-double PropertiesManager::GetHeatOutput1() {
-    return 0;
+double PropertiesManager::GetHeatOutputX() {
+    // TODO: check values
+    double pressure = f_x_ / tool_penetration_depth_;
+    double velocity = tool_angular_velo_ * tool_radius_;
+    return friction_coef_ * velocity * pressure;
 }
 
-double PropertiesManager::GetHeatOutput2() {
-    return 0;
-}
+double PropertiesManager::GetHeatOutputZ(int x) {
+    // TODO: check values
+    double tool_center = tool_start_ + tool_radius_;
+    double radius = std::fabs(tool_center - x_position_[x]);
 
-double PropertiesManager::GetHeatOutput3() {
-    return 0;
+    /// WTF is this *1000 ???
+    double pressure = f_z_ * 1000 / (tool_radius_ * 2);
+    double velocity = tool_angular_velo_ * radius;
+    return friction_coef_ * velocity * pressure;
 }
 
 double PropertiesManager::GetHeatX(int x, int z) {
@@ -341,13 +354,9 @@ double PropertiesManager::GetHeatX(int x, int z) {
         return 0;
     }
 
-    if (x == i_tool_start_) {
-        return GetHeatOutput1() / delta_x_[x];
+    if (x == i_tool_start_ || i_tool_finish_ + 1) {
+        return GetHeatOutputX() / delta_x_[x];
     }
-    if (x == i_tool_finish_ + 1) {
-        return GetHeatOutput2() / delta_x_[x];
-    }
-
     return 0;
 }
 
@@ -360,7 +369,7 @@ double PropertiesManager::GetHeatZ(int x, int z) {
         return 0;
     }
 
-    return GetHeatOutput3() / delta_z_[z];
+    return GetHeatOutputZ(x) / delta_z_[z];
 }
 
 // Method getters
