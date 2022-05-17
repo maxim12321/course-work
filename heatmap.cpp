@@ -37,4 +37,5 @@ void Heatmap::SetValues(const Matrix& data) {
         }
     }
     color_map_->rescaleDataRange(true);
+    replot();
 }
