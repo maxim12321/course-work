@@ -15,7 +15,7 @@
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manager_() {
     QHBoxLayout* layout = new QHBoxLayout();
 
-    heatmap_ = new Heatmap(10, 10, this);
+    heatmap_ = new Heatmap(kWidth + 2, kHeight + 2, this);
     heatmap_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     layout->addWidget(heatmap_);
 
@@ -55,7 +55,7 @@ void MainWindow::SaveProperties() {
 
     properties_->ConfigManager();
 
-    Solver solver(&properties_manager_, [&](const Matrix& matrix) -> void {
+    Solver solver(kWidth, kHeight, &properties_manager_, [&](const Matrix& matrix) {
         heatmap_->SetValues(matrix);
     });
 

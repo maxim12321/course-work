@@ -1,5 +1,6 @@
 ﻿#include "properties_manager.h"
 
+#include <iostream>
 #include <QDebug>
 #include <QFile>
 #include <QStringList>
@@ -80,17 +81,24 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
     i_tool_start_ = hor_indxs.first;
     i_tool_finish_ = hor_indxs.second;
 
+    std::cout << "Delta x:\n";
+    std::cout << delta_x_ << std::endl;
+
     double current_x_position = 0;
     x_position_ = Vector(nx + 2);
     for (size_t i = 0; i < nx + 2; ++i) {
         x_position_[i] = current_x_position + delta_x_[i] / 2;
         current_x_position += delta_x_[i];
     }
+    std::cout << "X position:\n";
+    std::cout << x_position_ << std::endl;
 
     delta_z_ = Vector(nz + 2);
     auto vert_indxs = ComputeDeltas(nz, total_height_ / nz, delta_z_, {backing_height_, height_without_penetration_, total_height_});
     i_plate_start_ = vert_indxs.first;
     i_tool_bottom_start_ = vert_indxs.second;
+    std::cout << "Delta z:\n";
+    std::cout << delta_z_ << std::endl;
     
     tool_wave_height_ = tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];
 
@@ -285,23 +293,23 @@ double PropertiesManager::GetDeltaT() {
 }
 
 double PropertiesManager::GetDeltaX(int i) {
+    assert(i > 0 && i + 1 < delta_x_.GetSize());
     return delta_x_[i];
 }
 
 double PropertiesManager::GetDeltaBackX(int i) {
-    double current = delta_x_[i];
-    double next = i + 1 < delta_x_.GetSize() ? delta_x_[i + 1] : current;
-    return (current + next) / 2;
+    assert(i > 0 && i < delta_x_.GetSize());
+    return (delta_x_[i] + delta_x_[i - 1]) / 2;
 }
 
 double PropertiesManager::GetDeltaZ(int i) {
+    assert(i > 0 && i + 1 < delta_z_.GetSize());
     return delta_z_[i];
 }
 
 double PropertiesManager::GetDeltaBackZ(int i) {
-    double current = delta_z_[i];
-    double next = i + 1 < delta_z_.GetSize() ? delta_z_[i + 1] : current;
-    return (current + next) / 2;
+    assert(i > 0 && i < delta_z_.GetSize());
+    return (delta_z_[i] + delta_z_[i - 1]) / 2;
 }
 
 // Tool getters
@@ -342,7 +350,6 @@ double PropertiesManager::GetHeatOutputZ(int x) {
     double tool_center = tool_start_ + tool_radius_;
     double radius = std::fabs(tool_center - x_position_[x]);
 
-    /// WTF is this *1000 ???
     double pressure = f_z_ * 1000 / (tool_radius_ * 2);
     double velocity = tool_angular_velo_ * radius;
     return friction_coef_ * velocity * pressure;

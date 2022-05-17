@@ -1,9 +1,14 @@
 #include "tridiagonal.h"
 
+#include <iostream>
+
 const long double kEpsilon = 0.0000000001;
 
 bool TridiagonalAlgorithm(Matrix& matrix, Vector& right) {
-    return Gauss(matrix, right) && ReverseGauss(matrix, right);
+    std::cout << matrix << "\n" << right << "\n";
+    bool result = Gauss(matrix, right) && ReverseGauss(matrix, right);
+    std::cout << right << "\n" << std::endl;
+    return result;
 }
 
 bool Gauss(Matrix& matrix, Vector& right) {

@@ -1,10 +1,13 @@
 #include "solver.h"
 
 #include <QDebug>
+#include <iostream>
 
-Solver::Solver(PropertiesManager* properties, Callback callback)
+Solver::Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback callback)
     : properties_(properties),
       on_layer_ready_(std::move(callback)),
+      nx_(cells_x),
+      nz_(cells_z),
       row_solver_(properties),
       column_solver_(properties) {
     Initialize();
@@ -16,9 +19,6 @@ void Solver::Start() {
 }
 
 void Solver::Initialize() {
-    nx_ = 10;
-    nz_ = 10;
-
     current_temp_ = properties_->InitializeGrids(nx_, nz_);
     previous_temp_ = current_temp_;
 }
@@ -29,15 +29,22 @@ void Solver::CalculateNextLayer() {
         Matrix next_temp = column_solver_.CalculateNextIteration(current_temp_, semi_next);
         ++iteration;
 
+        std::cout << "\n------------- Semi-next -------------\n";
+        std::cout << semi_next.Transposed() << std::endl;
+
+        std::cout << "\n------------- Next temp -------------\n";
+        std::cout << next_temp.Transposed() << std::endl << std::endl;
+
         if (HasConverged(current_temp_, next_temp)) {
             qDebug() << "Converged!";
+            current_temp_ = next_temp;
             break;
         }
         current_temp_ = next_temp;
     }
 
     previous_temp_ = current_temp_;
-    on_layer_ready_(current_temp_);
+    on_layer_ready_(current_temp_.Transposed());
 }
 
 bool Solver::HasConverged(const Matrix& current, const Matrix& next) {

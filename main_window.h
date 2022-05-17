@@ -18,6 +18,10 @@ private slots:
     void SaveProperties();
 
 private:
+    constexpr static int kWidth = 10;
+    constexpr static int kHeight = 10;
+
+private:
     QWidget* main_widget_;
     Heatmap* heatmap_;
     Menu* menu_;
