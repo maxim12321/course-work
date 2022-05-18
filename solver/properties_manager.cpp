@@ -87,8 +87,8 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
     i_tool_start_ = hor_indxs.first;
     i_tool_finish_ = hor_indxs.second;
 
-    std::cout << "Delta x:\n";
-    std::cout << delta_x_ << std::endl;
+//    std::cout << "Delta x:\n";
+//    std::cout << delta_x_ << std::endl;
 
     double current_x_position = 0;
     x_position_ = Vector(nx + 2);
@@ -96,15 +96,15 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
         x_position_[i] = current_x_position + delta_x_[i] / 2;
         current_x_position += delta_x_[i];
     }
-    std::cout << "X position:\n";
-    std::cout << x_position_ << std::endl;
+//    std::cout << "X position:\n";
+//    std::cout << x_position_ << std::endl;
 
     delta_z_ = Vector(nz + 2);
     auto vert_indxs = ComputeDeltas(nz, total_height_ / nz, delta_z_, {backing_height_, height_without_penetration_, total_height_});
     i_plate_start_ = vert_indxs.first;
     i_tool_bottom_start_ = vert_indxs.second;
-    std::cout << "Delta z:\n";
-    std::cout << delta_z_ << std::endl;
+//    std::cout << "Delta z:\n";
+//    std::cout << delta_z_ << std::endl;
     
     tool_wave_height_ = tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];
 
@@ -136,26 +136,26 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 // Properties setters
 void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int /*material*/) {
 //    plate_material_ = materials_[material];
-    plate_lenght_ = length;
-    plate_height_ = height;
+    plate_lenght_ = length * 1e-3;
+    plate_height_ = height * 1e-3;
     plate_init_temp_ = init_temp;
 }
 
 void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int /*material*/) {
 //    backing_material_ = materials_[material];
-    backing_length_ = length;
-    backing_height_ = height;
+    backing_length_ = length * 1e-3;
+    backing_height_ = height * 1e-3;
     backing_init_temp_ = init_temp;
 }
 
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
-                                         double angular_velo, double friction_coef, double f_z, double f_x, int /*material*/) {
+                                         double frequency, double friction_coef, double f_z, double f_x, int /*material*/) {
 //    tool_material_ = materials_[material];
-    tool_radius_ = radius;
-    tool_height_ = height;
-    tool_penetration_depth_ = penetration_depth;
+    tool_radius_ = radius * 1e-3;
+    tool_height_ = height * 1e-3;
+    tool_penetration_depth_ = penetration_depth * 1e-3;
     tool_init_temp_ = init_temp;
-    tool_angular_velo_ = angular_velo;
+    tool_angular_velo_ = 2 * M_PI * frequency / 60;
     friction_coef_ = friction_coef;
     f_z_ = f_z;
     f_x_ = f_x;
@@ -279,8 +279,11 @@ double PropertiesManager::GetThermalConductivity(double x, double z, const Matri
         z1 = static_cast<int>(int_part);
         z2 = z1;
     } else {
+        assert(false);
         qDebug() << "Oh, something wrong in indexes for thermal condactivity: " << x << z;
     }
+
+    assert(std::fabs((x1 * 1. + x2) / 2 - x) < 1e-9 && std::fabs((z1 * 1. + z2) / 2 - z) < 1e-9);
 
     Material* prev_material = materials_[materials_grid_[x1][z1]];
     double prev_temp = temperatures[x1][z1];
@@ -362,7 +365,7 @@ double PropertiesManager::GetHeatOutputZ(int x) {
 }
 
 double PropertiesManager::GetHeatX(int x, int z) {
-    // Ignoring node in tool
+    // Ignoring nodes below tool
     if (z < i_tool_bottom_start_) {
         return 0;
     }
@@ -396,4 +399,8 @@ double PropertiesManager::GetEpsilon2() {
 
 int PropertiesManager::GetMaxIterations() {
     return max_iter_;
+}
+
+int PropertiesManager::GetTimeLayers() {
+    return time_layers_;
 }

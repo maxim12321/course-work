@@ -59,6 +59,7 @@ public:
     double GetEpsilon1();
     double GetEpsilon2();
     int GetMaxIterations();
+    int GetTimeLayers();
 
 private:
     std::pair<int, int> ComputeDeltas(int n, long double dx, Vector& delta, Vector borders);

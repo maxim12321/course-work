@@ -30,14 +30,14 @@ void ColumnIterationSolver::LeftColumn(const Matrix& prev_iter,
     // (0, 0) node
     {
         R = properties_->GetHeatCapacity(0, 0, prev_iter) * properties_->GetDensity(0, 0, prev_iter) +
-                        properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(0, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
+                        properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(0, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
                                                            properties_->GetAlpha3() / properties_->GetDeltaZ(1) +
                                                            properties_->GetAlpha1() / properties_->GetDeltaX(1));
 
-        Lambda_z = properties_->GetThermalConductivity(0, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[0][1] - prev_iter[0][0]);
+        Lambda_z = properties_->GetThermalConductivity(0, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[0][1] - prev_iter[0][0]);
 
         tridiagonal[0][0] = 1;
-        tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(0, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
+        tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(0, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
 
         column[0] = (properties_->GetHeatCapacity(0, 0, prev_iter) * properties_->GetDensity(0, 0, prev_iter) * semi_prev_iter[0][0] -
                      properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * Lambda_z +
@@ -50,14 +50,14 @@ void ColumnIterationSolver::LeftColumn(const Matrix& prev_iter,
     // (0, M + 1) node
     {
         R = properties_->GetHeatCapacity(0, M_, prev_iter) * properties_->GetDensity(0, M_, prev_iter) +
-            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(0, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_) * properties_->GetDeltaZ(M_)) +
+            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(0, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_) * properties_->GetDeltaZ(M_)) +
                                                properties_->GetAlpha1() / properties_->GetDeltaX(1) +
                                                properties_->GetAlpha4() / properties_->GetDeltaZ(M_));
 
-        Lambda_z = properties_->GetThermalConductivity(0, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[0][M_ + 1] - prev_iter[0][M_]);
+        Lambda_z = properties_->GetThermalConductivity(0, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[0][M_ + 1] - prev_iter[0][M_]);
 
         tridiagonal[M_ + 1][1] = 1;
-        tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * properties_->GetThermalConductivity(0, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) / R;
+        tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * properties_->GetThermalConductivity(0, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) / R;
 
         column[M_ + 1] =  (properties_->GetHeatCapacity(0, M_, prev_iter) * properties_->GetDensity(0, M_, prev_iter) * semi_prev_iter[0][M_ + 1] +
                            properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * Lambda_z +
@@ -93,63 +93,75 @@ void ColumnIterationSolver::MiddleColumn(const Matrix& prev_iter,
                                          Vector& column, int i) {
     Matrix tridiagonal(M_ + 2, 3);
 
-    // (i, 0) node
-    long double R = properties_->GetHeatCapacity(i, 0, prev_iter) * properties_->GetDensity(i, 0, prev_iter) +
-                    properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(i, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
-                                                       properties_->GetAlpha3() / properties_->GetDeltaZ(1));
-    long double Lambda_z = properties_->GetThermalConductivity(i, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[i][1] - prev_iter[i][0]);
+    long double R;
+    long double Lambda_z;
 
-    tridiagonal[0][0] = 1;
-    tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(i, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
-    column[0] = (properties_->GetHeatCapacity(i, 0, prev_iter) * properties_->GetDensity(i, 0, prev_iter) * semi_prev_iter[i][0] -
-                 properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * Lambda_z +
-                 properties_->GetDeltaT() * properties_->GetAlpha3() * semi_prev_iter[i][0] / (0.25 * properties_->GetDeltaZ(1))) / R;
+    // (i, 0) node
+    {
+        R = properties_->GetHeatCapacity(i, 0, prev_iter) * properties_->GetDensity(i, 0, prev_iter) +
+                        properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(i, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
+                                                           properties_->GetAlpha3() / properties_->GetDeltaZ(1));
+
+        Lambda_z = properties_->GetThermalConductivity(i, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[i][1] - prev_iter[i][0]);
+
+        tridiagonal[0][0] = 1;
+        tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(i, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
+
+        column[0] = (properties_->GetHeatCapacity(i, 0, prev_iter) * properties_->GetDensity(i, 0, prev_iter) * semi_prev_iter[i][0] -
+                     properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * Lambda_z +
+                     properties_->GetDeltaT() * properties_->GetAlpha3() * semi_prev_iter[i][0] / (0.25 * properties_->GetDeltaZ(1))) / R;
+    }
 
     // (N + 1, M + 1) node
-    // Common part for all nodes in [1, NxIb - 1]+[NxIf + 2, Nx] and (NxIb) and (NxIf + 1) and [NxIb + 2, NxIf - 1] and (NxIb + 1) and (NxIf)
-    Lambda_z = properties_->GetThermalConductivity(i, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[i][M_ + 1] - prev_iter[i][M_]);
-    tridiagonal[M_ + 1][1] = 1;
-    tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() * properties_->GetThermalConductivity(i, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_));
-    R = properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter);
+    {
+        // Common part for all nodes in [1, NxIb - 1]+[NxIf + 2, Nx] and (NxIb) and (NxIf + 1) and [NxIb + 2, NxIf - 1] and (NxIb + 1) and (NxIf)
+        Lambda_z = properties_->GetThermalConductivity(i, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[i][M_ + 1] - prev_iter[i][M_]);
+        tridiagonal[M_ + 1][1] = 1;
+        tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() * properties_->GetThermalConductivity(i, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_));
+        R = properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter);
 
-    // Correct
-    if (i <= properties_->GetToolStartI() || properties_->GetToolFinishI() + 1 <= i) {
-        R += properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * (properties_->GetThermalConductivity(i, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
-                                                                               properties_->GetAlpha4());
+        // Correct
+        if (i <= properties_->GetToolStartI() || properties_->GetToolFinishI() + 1 <= i) {
+            R += properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * (properties_->GetThermalConductivity(i, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
+                                                                                   properties_->GetAlpha4());
 
-        tridiagonal[M_ + 1][0] /= 0.25 * properties_->GetDeltaZ(M_) * R;
+            tridiagonal[M_ + 1][0] /= 0.25 * properties_->GetDeltaZ(M_) * R;
 
-        column[M_ + 1] =  (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] + /* (-) in doc ?*/
-                           properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * Lambda_z +
-                           semi_prev_iter[i][M_ + 1] * properties_->GetDeltaT() * properties_->GetAlpha4() / (0.25 * properties_->GetDeltaZ(M_))) / R;
-    }
-    if (i > properties_->GetToolStartI() + 1 && i < properties_->GetToolFinishI()) {
-        R += properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (properties_->GetThermalConductivity(i, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
-                                                                            properties_->GetThermalConductivity(i, M_, prev_iter) / (properties_->GetToolHeight() -
-                                                                                                                                     properties_->GetToolPenetration()));
-        tridiagonal[M_ + 1][0] /= properties_->GetToolWaveHeight() * R;
+            column[M_ + 1] =  (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] + /* (-) in doc ?*/
+                               properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * Lambda_z +
+                               semi_prev_iter[i][M_ + 1] * properties_->GetDeltaT() * properties_->GetAlpha4() / (0.25 * properties_->GetDeltaZ(M_))) / R;
+        }
 
-        column[M_ + 1] = (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] +
-                          properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
-                                properties_->GetThermalConductivity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] / (properties_->GetToolHeight() - properties_->GetToolPenetration()) +
-                                Lambda_z
-                )) / R;
-    }
-    if (i == properties_->GetToolStartI() + 1 || i == properties_->GetToolFinishI()) {
-        R += properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
-                    properties_->GetThermalConductivity(i, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
-                    (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() / properties_->GetDeltaX(i) +
-                    properties_->GetThermalConductivity(i, M_, prev_iter) / (properties_->GetToolHeight() - properties_->GetToolPenetration())
-            );
+        if (i > properties_->GetToolStartI() + 1 && i < properties_->GetToolFinishI()) {
+            R += properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (properties_->GetThermalConductivity(i, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
+                                                                                properties_->GetThermalConductivity(i, M_, prev_iter) / (properties_->GetToolHeight() -
+                                                                                                                                         properties_->GetToolPenetration()));
+            tridiagonal[M_ + 1][0] /= properties_->GetToolWaveHeight() * R;
 
-        tridiagonal[M_ + 1][0] /= properties_->GetToolWaveHeight() * R;
+            column[M_ + 1] = (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] +
+                              properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
+                                    properties_->GetThermalConductivity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] / (properties_->GetToolHeight() - properties_->GetToolPenetration()) +
+                                    Lambda_z
+                    )) / R;
+        }
 
-        column[M_ + 1] = (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] +
-                          properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
-                                properties_->GetThermalConductivity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] / (properties_->GetToolHeight() - properties_->GetToolPenetration()) +
-                                (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() * semi_prev_iter[i][M_ + 1] / properties_->GetDeltaX(i) +
-                                Lambda_z
-                )) / R;
+        if (i == properties_->GetToolStartI() + 1 || i == properties_->GetToolFinishI()) {
+            R += properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
+                        properties_->GetThermalConductivity(i, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) +
+                        (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() / properties_->GetDeltaX(i) +
+                        properties_->GetThermalConductivity(i, M_, prev_iter) / (properties_->GetToolHeight() - properties_->GetToolPenetration())
+                );
+
+            tridiagonal[M_ + 1][0] /= properties_->GetToolWaveHeight() * R;
+
+            column[M_ + 1] = (properties_->GetHeatCapacity(i, M_, prev_iter) * properties_->GetDensity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] +
+                              properties_->GetDeltaT() / properties_->GetToolWaveHeight() * (
+                                    properties_->GetThermalConductivity(i, M_, prev_iter) * semi_prev_iter[i][M_ + 1] / (properties_->GetToolHeight() - properties_->GetToolPenetration()) +
+                                    (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) * properties_->GetAlpha4() * semi_prev_iter[i][M_ + 1] / properties_->GetDeltaX(i) +
+                                    Lambda_z
+                    )) / R;
+        }
+
     }
 
     // (i, k), k = 1..M_, nodes
@@ -183,12 +195,12 @@ void ColumnIterationSolver::RightColumn(const Matrix& prev_iter,
     // (N + 1, 0) node
     {
         R = properties_->GetHeatCapacity(N_, 0, prev_iter) * properties_->GetDensity(N_, 0, prev_iter) +
-            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(N_, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
+            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(N_, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1) * properties_->GetDeltaZ(1)) +
                                                properties_->GetAlpha3() / properties_->GetDeltaZ(1) +
                                                properties_->GetAlpha2() / properties_->GetDeltaX(N_));
-        Lambda_z = properties_->GetThermalConductivity(N_, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[N_ + 1][1] - prev_iter[N_ + 1][0]);
+        Lambda_z = properties_->GetThermalConductivity(N_, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) * (prev_iter[N_ + 1][1] - prev_iter[N_ + 1][0]);
         tridiagonal[0][0] = 1;
-        tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(N_, 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
+        tridiagonal[0][1] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * properties_->GetThermalConductivity(N_, /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(1)) / R;
         column[0] = (properties_->GetHeatCapacity(N_, 0, prev_iter) * properties_->GetDensity(N_, 0, prev_iter) * semi_prev_iter[N_ + 1][0] -
                      properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(1)) * Lambda_z +
                      semi_prev_iter[N_ + 1][0] * properties_->GetDeltaT() / 0.25 * (properties_->GetAlpha3() / properties_->GetDeltaZ(1) +
@@ -198,13 +210,13 @@ void ColumnIterationSolver::RightColumn(const Matrix& prev_iter,
     // (N + 1, M + 1) node
     {
         R = properties_->GetHeatCapacity(N_, M_, prev_iter) * properties_->GetDensity(N_, M_, prev_iter) +
-            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(N_, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_) * properties_->GetDeltaZ(M_)) +
+            properties_->GetDeltaT() / 0.25 * (properties_->GetThermalConductivity(N_, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_) * properties_->GetDeltaZ(M_)) +
                                                properties_->GetAlpha2() / properties_->GetDeltaX(N_) +
                                                properties_->GetAlpha4() / properties_->GetDeltaZ(M_));
-        Lambda_z = properties_->GetThermalConductivity(N_, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[N_ + 1][M_ + 1] - prev_iter[N_ + 1][M_]);
+        Lambda_z = properties_->GetThermalConductivity(N_, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) * (prev_iter[N_ + 1][M_ + 1] - prev_iter[N_ + 1][M_]);
 
         tridiagonal[M_ + 1][1] = 1;
-        tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * properties_->GetThermalConductivity(N_, M_ - 0.25, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) / R;
+        tridiagonal[M_ + 1][0] = -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * properties_->GetThermalConductivity(N_, M_ - /*0.25*/0.5, prev_iter) / (0.5 * properties_->GetDeltaZ(M_)) / R;
 
         column[M_ + 1] =  (properties_->GetHeatCapacity(N_, M_, prev_iter) * properties_->GetDensity(N_, M_, prev_iter) * semi_prev_iter[N_ + 1 ][M_ + 1] + /* (-) in doc ?*/
                            properties_->GetDeltaT() / (0.25 * properties_->GetDeltaZ(M_)) * Lambda_z +

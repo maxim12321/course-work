@@ -15,10 +15,9 @@ Solver::Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback
 
 void Solver::Start() {
     // Put this in a loop later
-    for (size_t i = 0; i < properties_->GetMaxIterations(); ++i) {
+    for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
         CalculateNextLayer();
     }
-    on_layer_ready_(current_temp_.Transposed());
 }
 
 void Solver::Initialize() {
@@ -28,10 +27,13 @@ void Solver::Initialize() {
 
 void Solver::CalculateNextLayer() {
     for (int iteration = 0; iteration < properties_->GetMaxIterations(); ++iteration) {
+//    for (int iteration = 0; iteration < 1; ++iteration) {
         Matrix semi_next = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
+//        Matrix next_temp = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
         Matrix next_temp = column_solver_.CalculateNextIteration(current_temp_, semi_next);
-        ++iteration;
-
+        if (HasConverged(semi_next, next_temp)) {
+            qDebug() << "Useless column iterations";
+        }
 //        std::cout << "\n------------- Semi-next -------------\n";
 //        std::cout << semi_next.Transposed() << std::endl;
 
@@ -39,7 +41,7 @@ void Solver::CalculateNextLayer() {
 //        std::cout << next_temp.Transposed() << std::endl << std::endl;
 
         if (HasConverged(current_temp_, next_temp)) {
-            qDebug() << "Converged!";
+            qDebug() << "Converged!" << iteration;
             current_temp_ = next_temp;
             break;
         }
@@ -47,7 +49,7 @@ void Solver::CalculateNextLayer() {
     }
 
     previous_temp_ = current_temp_;
-//    on_layer_ready_(current_temp_.Transposed());
+    on_layer_ready_(current_temp_.Transposed());
 }
 
 bool Solver::HasConverged(const Matrix& current, const Matrix& next) {
