@@ -149,7 +149,7 @@ void PropertiesManager::SetBackingProperties(double length, double height, doubl
 }
 
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
-                                         double frequency, double friction_coef, double f_z, double f_x, int /*material*/) {
+                                         double frequency, double friction_coef, double f_x, double f_z, int /*material*/) {
 //    tool_material_ = materials_[material];
     tool_radius_ = radius * 1e-3;
     tool_height_ = height * 1e-3;
@@ -157,8 +157,8 @@ void PropertiesManager::SetToolProperties(double radius, double height, double p
     tool_init_temp_ = init_temp;
     tool_angular_velo_ = 2 * M_PI * frequency / 60;
     friction_coef_ = friction_coef;
-    f_z_ = f_z;
     f_x_ = f_x;
+    f_z_ = f_z;
 }
 
 void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double eps2, int max_iter_count, int time_layers_count, int tool_words) {
@@ -349,7 +349,7 @@ int PropertiesManager::GetToolFinishI() {
 // Heat getters
 double PropertiesManager::GetHeatOutputX() {
     // TODO: check values
-    double pressure = f_x_ / tool_penetration_depth_;
+    double pressure = f_x_ / delta_z_[i_tool_bottom_start_];
     double velocity = tool_angular_velo_ * tool_radius_;
     return friction_coef_ * velocity * pressure;
 }
@@ -359,7 +359,7 @@ double PropertiesManager::GetHeatOutputZ(int x) {
     double tool_center = tool_start_ + tool_radius_;
     double radius = std::fabs(tool_center - x_position_[x]);
 
-    double pressure = f_z_ * 1000 / (tool_radius_ * 2);
+    double pressure = f_z_ / (delta_x_[x] * 2);
     double velocity = tool_angular_velo_ * radius;
     return friction_coef_ * velocity * pressure;
 }
