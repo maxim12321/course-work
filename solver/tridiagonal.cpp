@@ -5,9 +5,9 @@
 const long double kEpsilon = 0.0000000001;
 
 bool TridiagonalAlgorithm(Matrix& matrix, Vector& right) {
-    std::cout << matrix << "\n" << right << "\n";
+//    std::cout << matrix << "\n" << right << "\n";
     bool result = Gauss(matrix, right) && ReverseGauss(matrix, right);
-    std::cout << right << "\n" << std::endl;
+//    std::cout << right << "\n" << std::endl;
     return result;
 }
 

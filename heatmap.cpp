@@ -29,7 +29,7 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 }
 
 void Heatmap::SetValues(const Matrix& data) {
-    std::cout << std::endl << data << std::endl;
+//    std::cout << std::endl << data << std::endl;
 
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {

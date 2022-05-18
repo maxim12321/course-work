@@ -50,13 +50,18 @@ std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vect
     long double curr_pos = 0;
     
     int j = 0;
+//    std::cout << borders << '\n';
+//    std::cout << n << ' '<< dx << '\n';
     for (int i = 1; i <= n; ++i) {
+//        std::cout << i << ' ' << remainder << ' ' << j << ' ' << curr_pos << ' ';
         delta[i] = std::min(dx + remainder, borders[j] - curr_pos);
+//        std::cout << delta[i] << '\n';
         if (delta[i] < 1e-9) {
             borders[j] = i - 1;
             ++j;
             if (j == borders.GetSize()) {
-                assert(i == n);
+                std::cout << curr_pos << remainder << '\n';
+                assert(i == n && curr_pos == borders[2] && remainder < 1e-9);
             }
             --i;
             continue;
@@ -64,6 +69,7 @@ std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vect
         remainder = dx - delta[i];
         curr_pos += delta[i];
     }
+//    assert(curr_pos == borders[2]);
     return std::make_pair(static_cast<int>(borders[0]), static_cast<int>(borders[1]));
 }
 
