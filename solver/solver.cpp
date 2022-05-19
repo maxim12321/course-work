@@ -1,7 +1,10 @@
 #include "solver.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <iostream>
+
+#include <chrono>
 
 Solver::Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback callback)
     : properties_(properties),
@@ -14,10 +17,18 @@ Solver::Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback
 }
 
 void Solver::Start() {
-    // Put this in a loop later
+    auto start = std::chrono::steady_clock::now();
+
     for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
         CalculateNextLayer();
+        if (i % 100 == 0) {
+            QCoreApplication::processEvents();
+        }
     }
+
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 }
 
 void Solver::Initialize() {
@@ -27,21 +38,10 @@ void Solver::Initialize() {
 
 void Solver::CalculateNextLayer() {
     for (int iteration = 0; iteration < properties_->GetMaxIterations(); ++iteration) {
-//    for (int iteration = 0; iteration < 1; ++iteration) {
         Matrix semi_next = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
-//        Matrix next_temp = row_solver_.CalculateNextIteration(current_temp_, previous_temp_);
         Matrix next_temp = column_solver_.CalculateNextIteration(current_temp_, semi_next);
-        if (HasConverged(semi_next, next_temp)) {
-            qDebug() << "Useless column iterations";
-        }
-//        std::cout << "\n------------- Semi-next -------------\n";
-//        std::cout << semi_next.Transposed() << std::endl;
-
-//        std::cout << "\n------------- Next temp -------------\n";
-//        std::cout << next_temp.Transposed() << std::endl << std::endl;
 
         if (HasConverged(current_temp_, next_temp)) {
-            qDebug() << "Converged!" << iteration;
             current_temp_ = next_temp;
             break;
         }

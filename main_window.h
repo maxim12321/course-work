@@ -23,6 +23,7 @@ private:
 
 private:
     QWidget* main_widget_;
+    QPushButton* compute_button_;
     Heatmap* heatmap_;
     Menu* menu_;
     PropertiesWidget* properties_;

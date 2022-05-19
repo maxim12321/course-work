@@ -23,11 +23,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manage
     properties_ = new PropertiesWidget(properties_manager_, this);
     properties_layout->addWidget(properties_);
 
-    QPushButton* compute_button = new QPushButton("Вычислить", this);
-//    connect(compute_button, SIGNAL (released()), properties_, SLOT (CreateInputForSolver()));
-//    connect(compute_button, SIGNAL (released()), properties_, SLOT (ConfigManager()));
-    connect(compute_button, SIGNAL(released()), this, SLOT(SaveProperties()));
-    properties_layout->addWidget(compute_button);
+    compute_button_ = new QPushButton("Вычислить", this);
+    connect(compute_button_, SIGNAL(released()), this, SLOT(SaveProperties()));
+    properties_layout->addWidget(compute_button_);
 
     layout->addLayout(properties_layout);
 
@@ -40,24 +38,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manage
 
     setGeometry(400, 200, 840, 480);
 
-//    SolutionRunner::Run();
-
     GridDataProcessor* processor = new GridDataProcessor(heatmap_, 402, 202, 99, 100);
     processor->Start();
 }
 
 void MainWindow::SaveProperties() {
-//    QString filename = QFileDialog::getSaveFileName(this, "Properties saving");
-//    if (filename.size() == 0) {
-//        return;
-//    }
-//    properties_->SaveToFile(filename);
-
     properties_->ConfigManager();
 
     Solver solver(kWidth, kHeight, &properties_manager_, [&](const Matrix& matrix) {
         heatmap_->SetValues(matrix);
     });
 
+    compute_button_->setEnabled(false);
     solver.Start();
+    compute_button_->setEnabled(true);
 }

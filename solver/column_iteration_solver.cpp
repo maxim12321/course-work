@@ -12,9 +12,15 @@ Matrix ColumnIterationSolver::CalculateNextIteration(const Matrix& prev_iter,
     Matrix next(N_ + 2, M_ + 2);
 
     LeftColumn(prev_iter, semi_prev_iter, next[0]);
-    for (int i = 1; i <= N_; ++i) {
-        MiddleColumn(prev_iter, semi_prev_iter, next[i], i);
+
+#pragma omp parallel num_threads(8)
+    {
+#pragma omp for
+        for (int i = 1; i <= N_; ++i) {
+            MiddleColumn(prev_iter, semi_prev_iter, next[i], i);
+        }
     }
+
     RightColumn(prev_iter, semi_prev_iter, next[N_ + 1]);
 
     return next;

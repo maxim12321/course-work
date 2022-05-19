@@ -11,7 +11,7 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
     color_map_ = new QCPColorMap(xAxis, yAxis);
     color_map_->data()->setSize(width_, height_);
 
-    QCPRange range(20, 100);
+    QCPRange range(20, kMaxTemperature);
     QCPColorScale *colorScale = new QCPColorScale(this);
     colorScale->setDataRange(range);
 

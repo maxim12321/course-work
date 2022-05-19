@@ -11,9 +11,15 @@ Matrix RowIterationSolver::CalculateNextIteration(const Matrix& prev_iter, const
     Matrix next(M_ + 2, N_ + 2);
 
     BottomRow(prev_iter, prev_layer, next[0]);
-    for (int i = 1; i <= M_; ++i) {
-        MiddleRow(prev_iter, prev_layer, next[i], i);
+
+#pragma omp parallel num_threads(8)
+    {
+#pragma omp for
+        for (int i = 1; i <= M_; ++i) {
+            MiddleRow(prev_iter, prev_layer, next[i], i);
+        }
     }
+
     TopRow(prev_iter, prev_layer, next[M_ + 1]);
 
     next.Transpose();

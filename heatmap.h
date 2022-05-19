@@ -10,6 +10,9 @@ public:
     void SetValues(const Matrix& data);
 
 private:
+    static constexpr int kMaxTemperature = 120;
+
+private:
     int width_;
     int height_;
     QCPColorMap *color_map_;
