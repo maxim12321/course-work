@@ -71,7 +71,7 @@ QVector<QVector<qreal>> GridDataProcessor::GetGridData(int) {
 }
 
 void GridDataProcessor::DisplayData() {
-    heatmap_->SetValues(grid_data_);
+//    heatmap_->SetValues(grid_data_);
 }
 
 void GridDataProcessor::RerunTimer() {

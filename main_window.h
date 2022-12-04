@@ -18,7 +18,12 @@ private slots:
     void SaveProperties();
 
 private:
+    constexpr static int kWidth = 100;
+    constexpr static int kHeight = 100;
+
+private:
     QWidget* main_widget_;
+    QPushButton* compute_button_;
     Heatmap* heatmap_;
     Menu* menu_;
     PropertiesWidget* properties_;

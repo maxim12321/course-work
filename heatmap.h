@@ -2,10 +2,15 @@
 
 #include <qcustomplot/qcustomplot.h>
 
+#include "solver/utils/matrix.h"
+
 class Heatmap : public QCustomPlot {
 public:
     Heatmap(int width, int height, QWidget* parent);
-    void SetValues(const QVector<QVector<qreal>>& data);
+    void SetValues(const Matrix& data);
+
+private:
+    static constexpr int kMaxTemperature = 120;
 
 private:
     int width_;

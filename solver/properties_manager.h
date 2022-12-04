@@ -50,9 +50,8 @@ public:
     int GetToolStartI();
     int GetToolFinishI();
 
-    double GetHeatOutput1();
-    double GetHeatOutput2();
-    double GetHeatOutput3();
+    double GetHeatOutputX();
+    double GetHeatOutputZ(int x);
 
     double GetHeatX(int x, int z);
     double GetHeatZ(int x, int z);
@@ -60,6 +59,7 @@ public:
     double GetEpsilon1();
     double GetEpsilon2();
     int GetMaxIterations();
+    int GetTimeLayers();
 
 private:
     std::pair<int, int> ComputeDeltas(int n, long double dx, Vector& delta, Vector borders);
@@ -130,4 +130,7 @@ private:
 
     Vector delta_x_;
     Vector delta_z_;
+
+    // For each cell stores x position of its center
+    Vector x_position_;
 };

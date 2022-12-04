@@ -11,7 +11,7 @@ class Solver {
 public:
     using Callback = std::function<void(const Matrix&)>;
 
-    Solver(PropertiesManager* properties, Callback callback);
+    Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback callback);
 
     // Separate thread for this later?
     void Start();
@@ -23,6 +23,8 @@ private:
     // Calculate new values for *temperature_* based on current values,
     // invoke *on_layer_ready_* callback
     void CalculateNextLayer();
+
+    bool HasConverged(const Matrix& current, const Matrix& next);
 
 private:
     PropertiesManager* properties_;

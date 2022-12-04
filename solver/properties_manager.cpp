@@ -1,5 +1,6 @@
 ﻿#include "properties_manager.h"
 
+#include <iostream>
 #include <QDebug>
 #include <QFile>
 #include <QStringList>
@@ -49,13 +50,18 @@ std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vect
     long double curr_pos = 0;
     
     int j = 0;
+//    std::cout << borders << '\n';
+//    std::cout << n << ' '<< dx << '\n';
     for (int i = 1; i <= n; ++i) {
+//        std::cout << i << ' ' << remainder << ' ' << j << ' ' << curr_pos << ' ';
         delta[i] = std::min(dx + remainder, borders[j] - curr_pos);
+//        std::cout << delta[i] << '\n';
         if (delta[i] < 1e-9) {
             borders[j] = i - 1;
             ++j;
             if (j == borders.GetSize()) {
-                assert(i == n);
+                std::cout << curr_pos << remainder << '\n';
+                assert(i == n && curr_pos == borders[2] && remainder < 1e-9);
             }
             --i;
             continue;
@@ -63,6 +69,7 @@ std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx, Vect
         remainder = dx - delta[i];
         curr_pos += delta[i];
     }
+//    assert(curr_pos == borders[2]);
     return std::make_pair(static_cast<int>(borders[0]), static_cast<int>(borders[1]));
 }
 
@@ -79,11 +86,25 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
     auto hor_indxs = ComputeDeltas(nx, total_length_ / nx, delta_x_, {tool_start_, tool_finish_, total_length_});
     i_tool_start_ = hor_indxs.first;
     i_tool_finish_ = hor_indxs.second;
-    
+
+//    std::cout << "Delta x:\n";
+//    std::cout << delta_x_ << std::endl;
+
+    double current_x_position = 0;
+    x_position_ = Vector(nx + 2);
+    for (size_t i = 0; i < nx + 2; ++i) {
+        x_position_[i] = current_x_position + delta_x_[i] / 2;
+        current_x_position += delta_x_[i];
+    }
+//    std::cout << "X position:\n";
+//    std::cout << x_position_ << std::endl;
+
     delta_z_ = Vector(nz + 2);
     auto vert_indxs = ComputeDeltas(nz, total_height_ / nz, delta_z_, {backing_height_, height_without_penetration_, total_height_});
     i_plate_start_ = vert_indxs.first;
     i_tool_bottom_start_ = vert_indxs.second;
+//    std::cout << "Delta z:\n";
+//    std::cout << delta_z_ << std::endl;
     
     tool_wave_height_ = tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];
 
@@ -115,29 +136,29 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 // Properties setters
 void PropertiesManager::SetPlateProperties(double length, double height, double init_temp, int /*material*/) {
 //    plate_material_ = materials_[material];
-    plate_lenght_ = length;
-    plate_height_ = height;
+    plate_lenght_ = length * 1e-3;
+    plate_height_ = height * 1e-3;
     plate_init_temp_ = init_temp;
 }
 
 void PropertiesManager::SetBackingProperties(double length, double height, double init_temp, int /*material*/) {
 //    backing_material_ = materials_[material];
-    backing_length_ = length;
-    backing_height_ = height;
+    backing_length_ = length * 1e-3;
+    backing_height_ = height * 1e-3;
     backing_init_temp_ = init_temp;
 }
 
 void PropertiesManager::SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
-                                         double angular_velo, double friction_coef, double f_z, double f_x, int /*material*/) {
+                                         double frequency, double friction_coef, double f_x, double f_z, int /*material*/) {
 //    tool_material_ = materials_[material];
-    tool_radius_ = radius;
-    tool_height_ = height;
-    tool_penetration_depth_ = penetration_depth;
+    tool_radius_ = radius * 1e-3;
+    tool_height_ = height * 1e-3;
+    tool_penetration_depth_ = penetration_depth * 1e-3;
     tool_init_temp_ = init_temp;
-    tool_angular_velo_ = angular_velo;
+    tool_angular_velo_ = 2 * M_PI * frequency / 60;
     friction_coef_ = friction_coef;
-    f_z_ = f_z;
     f_x_ = f_x;
+    f_z_ = f_z;
 }
 
 void PropertiesManager::SetMethodProperties(double delta_t, double eps1, double eps2, int max_iter_count, int time_layers_count, int tool_words) {
@@ -258,8 +279,11 @@ double PropertiesManager::GetThermalConductivity(double x, double z, const Matri
         z1 = static_cast<int>(int_part);
         z2 = z1;
     } else {
+        assert(false);
         qDebug() << "Oh, something wrong in indexes for thermal condactivity: " << x << z;
     }
+
+    assert(std::fabs((x1 * 1. + x2) / 2 - x) < 1e-9 && std::fabs((z1 * 1. + z2) / 2 - z) < 1e-9);
 
     Material* prev_material = materials_[materials_grid_[x1][z1]];
     double prev_temp = temperatures[x1][z1];
@@ -278,23 +302,23 @@ double PropertiesManager::GetDeltaT() {
 }
 
 double PropertiesManager::GetDeltaX(int i) {
+    assert(i > 0 && i + 1 < delta_x_.GetSize());
     return delta_x_[i];
 }
 
 double PropertiesManager::GetDeltaBackX(int i) {
-    double current = delta_x_[i];
-    double next = i + 1 < delta_x_.GetSize() ? delta_x_[i + 1] : current;
-    return (current + next) / 2;
+    assert(i > 0 && i < delta_x_.GetSize());
+    return (delta_x_[i] + delta_x_[i - 1]) / 2;
 }
 
 double PropertiesManager::GetDeltaZ(int i) {
+    assert(i > 0 && i + 1 < delta_z_.GetSize());
     return delta_z_[i];
 }
 
 double PropertiesManager::GetDeltaBackZ(int i) {
-    double current = delta_z_[i];
-    double next = i + 1 < delta_z_.GetSize() ? delta_z_[i + 1] : current;
-    return (current + next) / 2;
+    assert(i > 0 && i < delta_z_.GetSize());
+    return (delta_z_[i] + delta_z_[i - 1]) / 2;
 }
 
 // Tool getters
@@ -323,31 +347,32 @@ int PropertiesManager::GetToolFinishI() {
 }
 
 // Heat getters
-double PropertiesManager::GetHeatOutput1() {
-    return 0;
+double PropertiesManager::GetHeatOutputX() {
+    // TODO: check values
+    double pressure = f_x_ / delta_z_[i_tool_bottom_start_];
+    double velocity = tool_angular_velo_ * tool_radius_;
+    return friction_coef_ * velocity * pressure;
 }
 
-double PropertiesManager::GetHeatOutput2() {
-    return 0;
-}
+double PropertiesManager::GetHeatOutputZ(int x) {
+    // TODO: check values
+    double tool_center = tool_start_ + tool_radius_;
+    double radius = std::fabs(tool_center - x_position_[x]);
 
-double PropertiesManager::GetHeatOutput3() {
-    return 0;
+    double pressure = f_z_ / (delta_x_[x] * 2);
+    double velocity = tool_angular_velo_ * radius;
+    return friction_coef_ * velocity * pressure;
 }
 
 double PropertiesManager::GetHeatX(int x, int z) {
-    // Ignoring node in tool
+    // Ignoring nodes below tool
     if (z < i_tool_bottom_start_) {
         return 0;
     }
 
-    if (x == i_tool_start_) {
-        return GetHeatOutput1() / delta_x_[x];
+    if (x == i_tool_start_ || i_tool_finish_ + 1) {
+        return GetHeatOutputX() / delta_x_[x];
     }
-    if (x == i_tool_finish_ + 1) {
-        return GetHeatOutput2() / delta_x_[x];
-    }
-
     return 0;
 }
 
@@ -360,7 +385,7 @@ double PropertiesManager::GetHeatZ(int x, int z) {
         return 0;
     }
 
-    return GetHeatOutput3() / delta_z_[z];
+    return GetHeatOutputZ(x) / delta_z_[z];
 }
 
 // Method getters
@@ -374,4 +399,8 @@ double PropertiesManager::GetEpsilon2() {
 
 int PropertiesManager::GetMaxIterations() {
     return max_iter_;
+}
+
+int PropertiesManager::GetTimeLayers() {
+    return time_layers_;
 }
