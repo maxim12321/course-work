@@ -3,8 +3,8 @@
 #include <QMainWindow>
 #include "menu.h"
 #include "properties_widget.h"
+#include "grid_data_processor.h"
 #include "heatmap.h"
-#include "solver/properties_manager.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -25,7 +25,7 @@ private:
     QWidget* main_widget_;
     QPushButton* compute_button_;
     Heatmap* heatmap_;
+    GridDataProcessor* processor_;
     Menu* menu_;
     PropertiesWidget* properties_;
-    PropertiesManager properties_manager_;
 };

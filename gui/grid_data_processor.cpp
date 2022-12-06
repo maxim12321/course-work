@@ -2,17 +2,29 @@
 
 #include <QDebug>
 
-GridDataProcessor::GridDataProcessor(Heatmap* heatmap,
-                                     int width, int height,
-                                     int total_steps, int timer_interval)
-    : heatmap_(heatmap),
-      total_steps_(total_steps),
-      default_timer_interval_(timer_interval),
-      data_loader_(width, height) {
-    grid_data_ = data_loader_.LoadData();
-
+GridDataProcessor::GridDataProcessor(Heatmap *heatmap) : heatmap_(heatmap) {
     timer_ = new QTimer(this);
     connect(timer_, SIGNAL(timeout()), this, SLOT(UpdateData()));
+}
+
+//GridDataProcessor::GridDataProcessor(Heatmap* heatmap,
+//                                     int width, int height,
+//                                     int total_steps, int timer_interval)
+//    : heatmap_(heatmap),
+//      total_steps_(total_steps),
+//      default_timer_interval_(timer_interval),
+//      data_loader_(width, height) {
+//    grid_data_ = data_loader_.LoadData();
+
+//    timer_ = new QTimer(this);
+//    connect(timer_, SIGNAL(timeout()), this, SLOT(UpdateData()));
+//}
+
+void GridDataProcessor::ProcessSolverOutput(int total_steps, int time_interval) {
+    qDebug() << "ProcessSolverOutput";
+    total_steps_ = total_steps;
+    data_loader_.LoadData(total_steps);
+    heatmap_->Resize(data_loader_.GetGridWidth(), data_loader_.GetGridHeight());
 }
 
 void GridDataProcessor::Start() {
@@ -71,7 +83,7 @@ QVector<QVector<qreal>> GridDataProcessor::GetGridData(int) {
 }
 
 void GridDataProcessor::DisplayData() {
-//    heatmap_->SetValues(grid_data_);
+    heatmap_->SetValues(data_loader_.GetGridData(current_step_));
 }
 
 void GridDataProcessor::RerunTimer() {

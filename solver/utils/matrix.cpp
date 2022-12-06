@@ -3,13 +3,14 @@
 Matrix::Matrix() : Matrix(0, 0) {}
 
 Matrix::Matrix(int n, int m)
-    : rows_(n), columns_(m), row_values_(n, Vector(m)) {}
+  : rows_(n), columns_(m), row_values_(n, Vector(m)) {}
 
 Matrix::Matrix(const std::initializer_list<Vector>& list) {
   rows_ = list.size();
   if (rows_ == 0) {
     columns_ = 0;
-  } else {
+  }
+  else {
     columns_ = list.begin()->GetSize();
   }
   for (const auto& row : list) {
@@ -123,6 +124,7 @@ void Matrix::AddRow(const Vector& row) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Matrix& matrix) {
+  out << matrix.GetRowCount() << ' ' << matrix.GetColumnCount() << '\n';
   out << "[";
   for (int i = 0; i < matrix.GetRowCount() - 1; i++) {
     out << matrix[i] << "\n ";

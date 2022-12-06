@@ -9,7 +9,7 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
     yAxis->setTickLabels(false);
 
     color_map_ = new QCPColorMap(xAxis, yAxis);
-    color_map_->data()->setSize(width_, height_);
+//    color_map_->data()->setSize(width_, height_);
 
     QCPRange range(20, kMaxTemperature);
     QCPColorScale *colorScale = new QCPColorScale(this);
@@ -32,11 +32,17 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
     rescaleAxes();
 }
 
-void Heatmap::SetValues(const Matrix& data) {
+void Heatmap::SetValues(const QVector<QVector<double>>& data) {
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {
             color_map_->data()->setCell(x, y, data[y][x] - 273);
         }
     }
     replot();
+}
+
+void Heatmap::Resize(int width, int height) {
+    color_map_->data()->setSize(width, height);
+    width_ = width;
+    height_ = height;
 }

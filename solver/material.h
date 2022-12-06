@@ -1,14 +1,15 @@
 #pragma once
 
-#include <QFile>
-#include <QString>
+#include <fstream>
+#include <string>
 
 #include "table_value.h"
 
 class Material {
 public:
-    // Material properties stored at resources/properties/materials/*id*.dat
-    explicit Material(int id);
+    Material() = default;
+    // Material properties the properties of the metric come in the input file
+    explicit Material(std::ifstream& file, int id);
 
     int GetId() const;
 
@@ -17,12 +18,9 @@ public:
     const TableValue& GetThermalConductivity() const;
 
 private:
-    const QString kMaterialsPath = "://resources/properties/materials/";
-
-private:
     void InitializeMaterial();
 
-    void ReadTableValues(QFile* file, TableValue* table_value);
+    void ReadTableValues(std::ifstream& file, TableValue* table_value);
 
 private:
     int id_;

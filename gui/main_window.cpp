@@ -6,13 +6,12 @@
 #include <QGraphicsView>
 #include <QPushButton>
 
-#include "solver/solver.h"
 #include "grid_data_processor.h"
 #include "menu.h"
 #include "properties_widget.h"
 #include "solution_runner.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manager_() {
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     QHBoxLayout* layout = new QHBoxLayout();
 
     heatmap_ = new Heatmap(kWidth + 2, kHeight + 2, this);
@@ -20,7 +19,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manage
     layout->addWidget(heatmap_);
 
     QVBoxLayout* properties_layout = new QVBoxLayout();
-    properties_ = new PropertiesWidget(properties_manager_, this);
+    properties_ = new PropertiesWidget(this);
     properties_layout->addWidget(properties_);
 
     compute_button_ = new QPushButton("Вычислить", this);
@@ -38,18 +37,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), properties_manage
 
     setGeometry(400, 200, 840, 480);
 
-    GridDataProcessor* processor = new GridDataProcessor(heatmap_, 402, 202, 99, 100);
-    processor->Start();
+    processor_ = new GridDataProcessor(heatmap_);
 }
 
 void MainWindow::SaveProperties() {
-    properties_->ConfigManager();
-
-    Solver solver(kWidth, kHeight, &properties_manager_, [&](const Matrix& matrix) {
-        heatmap_->SetValues(matrix);
-    });
-
     compute_button_->setEnabled(false);
-    solver.Start();
+    SolutionRunner::Run(properties_);
+
+    int layers = properties_->GetTimeLayersCount();
+    double step_s = properties_->GetTimeStep();
+    int step_ms = static_cast<int>(step_s * 1000);
+    processor_->ProcessSolverOutput(layers, step_ms);
+    processor_->Start();
+
     compute_button_->setEnabled(true);
 }

@@ -5,7 +5,7 @@ Vector::Vector() : Vector(0) {}
 Vector::Vector(int size, int default_value) : values_(size, default_value) {}
 
 Vector::Vector(const std::initializer_list<long double>& list)
-    : values_(list) {}
+  : values_(list) {}
 
 int Vector::GetSize() const {
   return values_.size();
@@ -75,12 +75,12 @@ Vector& Vector::operator*=(long double value) {
  * @param right End of the *other* vector, exclusive
  */
 void Vector::Add(const Vector& other, long double multiplier, int shift,
-                 int left, int right) {
+  int left, int right) {
   int begin = std::max(left, -shift);
 
   for (int index = begin;
-       index < other.GetSize() && index + shift < GetSize() && index != right;
-       index++) {
+    index < other.GetSize() && index + shift < GetSize() && index != right;
+    index++) {
     values_[index + shift] += other[index] * multiplier;
   }
 }
@@ -106,7 +106,7 @@ long double Vector::Length() const {
 std::ostream& operator<<(std::ostream& out, const Vector& vector) {
   out << "[";
   for (int i = 0; i < vector.GetSize() - 1; i++) {
-    out << vector[i] << ", ";
+    out << vector[i] << " ";
   }
   if (vector.GetSize() > 0) {
     out << vector[vector.GetSize() - 1];

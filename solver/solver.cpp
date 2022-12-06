@@ -1,18 +1,17 @@
 #include "solver.h"
 
-#include <QCoreApplication>
-#include <QDebug>
 #include <iostream>
 
 #include <chrono>
 
 Solver::Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback callback)
     : properties_(properties),
-      on_layer_ready_(std::move(callback)),
-      nx_(cells_x),
-      nz_(cells_z),
-      row_solver_(properties),
-      column_solver_(properties) {
+    on_layer_ready_(std::move(callback)),
+    nx_(cells_x),
+    nz_(cells_z),
+    row_solver_(properties),
+    column_solver_(properties)
+{
     Initialize();
 }
 
@@ -22,7 +21,7 @@ void Solver::Start() {
     for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
         CalculateNextLayer();
         if (i % 100 == 0) {
-            QCoreApplication::processEvents();
+            // Print some debug info for long calculations
         }
     }
 

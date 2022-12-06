@@ -1,10 +1,9 @@
 #include "properties_widget.h"
-#include "solver/properties_manager.h"
 
 #include <QDebug>
 #include <QFile>
 
-PropertiesWidget::PropertiesWidget(PropertiesManager& manager, QWidget* parent) : QTreeView(parent), manager_(manager) {
+PropertiesWidget::PropertiesWidget(QWidget* parent) : QTreeView(parent) {
     QStandardItemModel* model = new QStandardItemModel(0, 1);
 
     plate_properties_ = new PropertiesItem(kPlateConfigFileName);
@@ -26,47 +25,55 @@ PropertiesWidget::PropertiesWidget(PropertiesManager& manager, QWidget* parent) 
     resizeColumnToContents(0);
 }
 
+int PropertiesWidget::GetTimeLayersCount() {
+    return method_properties_->GetValue("ksloi_fin");
+}
+
+double PropertiesWidget::GetTimeStep() {
+    return method_properties_->GetValue("tau");
+}
+
 void PropertiesWidget::SaveToFile(const QString& file_name) {
     QFile file(file_name);
     if(!file.open(QIODevice::WriteOnly)) {
-        qDebug() << "error opening file: " << file.error();
+        qDebug() << "[SaveToFile] error opening file(" << file_name << "):" << file.error();
         return;
     }
     QTextStream file_stream(&file);
 
     file_stream << "plate\n";
+    int plate_material = static_cast<int>(plate_properties_->GetValue("mat_plast"));
+    SaveMaterialPropertiesToFile(file_stream, plate_material);
     plate_properties_->SaveToFile(file_stream);
 
     file_stream << "backing\n";
+    int backing_material = static_cast<int>(backing_properties_->GetValue("mat_sub"));
+    SaveMaterialPropertiesToFile(file_stream, backing_material);
     backing_properties_->SaveToFile(file_stream);
 
     file_stream << "tool\n";
+    int tool_material = static_cast<int>(tool_properties_->GetValue("mat_tool"));
+    SaveMaterialPropertiesToFile(file_stream, tool_material);
     tool_properties_->SaveToFile(file_stream);
 
     file_stream << "method\n";
     method_properties_->SaveToFile(file_stream);
 
-    file_stream << "heat exchange\n";
+    file_stream << "heat_exchange\n";
     heat_exch_properties_->SaveToFile(file_stream);
 
     file.close();
 }
 
-void PropertiesWidget::ConfigManager() {
-    auto plate_props = plate_properties_->GetValues();
-    manager_.SetPlateProperties(plate_props[0], plate_props[1], plate_props[3], plate_props[2]);
+void PropertiesWidget::SaveMaterialPropertiesToFile(QTextStream& file_stream, int id) {
+    QFile file(kMaterialsConfigPath + QString::number(id) + ".dat");
+    if(!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "error opening file for material " << id;
+        return;
+    }
 
-    auto backing_props = backing_properties_->GetValues();
-    manager_.SetBackingProperties(backing_props[0], backing_props[1], backing_props[3], backing_props[2]);
+    auto material_properties = file.readAll();
+    file_stream << material_properties;
 
-    auto tool_props = tool_properties_->GetValues();
-    manager_.SetToolProperties(tool_props[0], tool_props[1], tool_props[2], tool_props[4], tool_props[5], tool_props[6], tool_props[7], tool_props[8], tool_props[3]);
-
-    auto method_props = method_properties_->GetValues();
-    manager_.SetMethodProperties(method_props[0], method_props[3], method_props[4], method_props[5], method_props[1], method_props[2]);
-
-    auto heat_exch_props = heat_exch_properties_->GetValues();
-    manager_.SetHeatExchangePropeties(heat_exch_props[0], heat_exch_props[1], heat_exch_props[2], heat_exch_props[3], heat_exch_props[4], heat_exch_props[5]);
-
-//    manager_.PrintAllProperties();
+    file.close();
 }

@@ -1,13 +1,13 @@
 #pragma once
 
+#include <QVector>
 #include <qcustomplot/qcustomplot.h>
-
-#include "solver/utils/matrix.h"
 
 class Heatmap : public QCustomPlot {
 public:
     Heatmap(int width, int height, QWidget* parent);
-    void SetValues(const Matrix& data);
+    void SetValues(const QVector<QVector<double>>& data);
+    void Resize(int width, int height);
 
 private:
     static constexpr int kMaxTemperature = 120;

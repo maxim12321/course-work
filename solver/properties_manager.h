@@ -4,23 +4,47 @@
 #include "utils/matrix.h"
 #include "utils/vector.h"
 
-#include <QMap>
-#include <QObject>
-#include <QVector>
+#include <map>
+#include <vector>
 #include <utility>
+#include <functional>
+
+class PropertiesManager;
+
+class PropertiesManagerFabric {
+    enum class PropertiesType {
+        Tool,
+        Plate,
+        Backing,
+        Method,
+        HeatExchange,
+    };
+    static const std::map<std::string, PropertiesType> name_to_type_;
+public:
+    PropertiesManagerFabric() = delete;
+    static PropertiesManager Create(const std::string& properties_filepath);
+
+private:
+    static std::map<std::string, double*> CreateFieldsMap(PropertiesManager* manager);
+    static void LoadProperties(std::ifstream& file, PropertiesManager* manager);
+    static void LoadNamedProperties(std::ifstream& file, const std::map<std::string, double*>& property_name_to_value, size_t count);
+
+    // Some properties came in non-ISU units of measurement
+    static void NormalizePropertiesMeasurmentUnits(PropertiesManager* manager);
+
+private:
+    static const size_t tool_properties_count_ = 9;
+    static const size_t plate_properties_count_ = 4;
+    static const size_t backing_properties_count_ = 4;
+    static const size_t method_properties_count_ = 8;
+    static const size_t heat_exchange_properties_count_ = 6;
+};
 
 class PropertiesManager {
+    friend class PropertiesManagerFabric;
+    PropertiesManager() = default;
+
 public:
-    PropertiesManager();
-
-    void SetPlateProperties(double length, double height, double init_temp, int material);
-    void SetBackingProperties(double length, double height, double init_temp, int material);
-    void SetToolProperties(double radius, double height, double penetration_depth, double init_temp,
-                           double angular_velo, double friction_coef, double f_z, double f_x, int material);
-    void SetMethodProperties(double delta_t, double eps1, double eps2, int max_iter_count, int time_layers_count, int tool_words);
-
-    void SetHeatExchangePropeties(double alpha_1, double alpha_2, double alpha_3, double alpha_4, double alpha_4_tool, double out_temp);
-
     void PrintAllProperties();
 
     double GetAlpha1();
@@ -63,26 +87,27 @@ public:
 
 private:
     std::pair<int, int> ComputeDeltas(int n, long double dx, Vector& delta, Vector borders);
-        
-    void LoadMaterials();
-    
+
 private:
-    QMap<int, Material*> materials_;
+    std::vector<Material> materials_;
 
     // Material ID for each cell
-    QVector<QVector<int>> materials_grid_;
+    std::vector<std::vector<int>> materials_grid_;
 
     // Plate properties
+    // const std::map<std::string, double*> plate_propery_name_to_value_ = {
+    //     ""
+    // }
     double plate_lenght_;
     double plate_height_;
     double plate_init_temp_;
-    Material plate_material_{2};
+    size_t plate_material_i_;
 
     // Backing properties
     double backing_length_;
     double backing_height_;
     double backing_init_temp_;
-    Material backing_material_{1};
+    size_t backing_material_i_;
 
     double total_height_;
     double height_without_penetration_;
@@ -97,18 +122,18 @@ private:
     double tool_wave_height_;
     double tool_init_temp_;
     double tool_angular_velo_;
-    Material tool_material_{3};
+    size_t tool_material_i_;
     double friction_coef_;
     double f_z_;
     double f_x_;
-    
+
     // (Nx * Is) in doc
     int i_tool_start_;
     // (Nx * If) in doc
     int i_tool_finish_;
     // Useful for detecting nodes that adjacent to tool
     // It's z coordinate for first node under the tool
-    int i_tool_bottom_start_;   
+    int i_tool_bottom_start_;
     // It's z coordinate for first node under the plate
     int i_plate_start_;
 
@@ -121,12 +146,14 @@ private:
     double out_temp_;
 
     // Method properties
+    double nx_;
+    double nz_;
     double delta_t_;
     double eps1_;
     double eps2_;
-    int max_iter_;
-    int time_layers_;
-    int tool_words_;
+    double max_iter_;
+    double time_layers_;
+    double tool_words_;
 
     Vector delta_x_;
     Vector delta_z_;
