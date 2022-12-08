@@ -31,7 +31,7 @@ void PropertiesItem::CreateFromFile() {
             continue;
         }
         if (params.size() != 3) {
-            qDebug() << "Wrong number of parameters in file\n";
+            qDebug() << "Wrong number of parameters in file: " << file.fileName() << "\n";
             continue;
         }
 
@@ -54,6 +54,11 @@ void PropertiesItem::CreateFromFile() {
     setSizeHint(QSize(max_name_width * 10, 10));
 }
 
+double PropertiesItem::GetValue(const QString& name) {
+    assert(property_label_to_item_.contains(name));
+    return property_label_to_item_[name]->text().toDouble();
+}
+
 QList<double> PropertiesItem::GetValues() {
     QList<double> values;
     for (int i = 0; i < rowCount(); ++i) {
@@ -65,6 +70,6 @@ QList<double> PropertiesItem::GetValues() {
 
 void PropertiesItem::SaveToFile(QTextStream& file_stream) {
     for (const auto& label : property_label_to_item_.keys()) {
-        file_stream << label << " | " << property_label_to_item_[label]->text() << "\n";
+        file_stream << label << "|" << property_label_to_item_[label]->text() << "\n";
     }
 }

@@ -4,8 +4,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 CONFIG += c++17
 
-QMAKE_CXXFLAGS += -fopenmp
-LIBS += -fopenmp
+#QMAKE_CXXFLAGS += -fopenmp
+#LIBS += -fopenmp
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -40,15 +40,6 @@ SOURCES += \
     properties_item.cpp \
     properties_widget.cpp \
     solution_runner.cpp \
-    solver/column_iteration_solver.cpp \
-    solver/material.cpp \
-    solver/properties_manager.cpp \
-    solver/row_iteration_solver.cpp \
-    solver/solver.cpp \
-    solver/table_value.cpp \
-    solver/tridiagonal.cpp \
-    solver/utils/matrix.cpp \
-    solver/utils/vector.cpp
 
 HEADERS += \
     grid_data_loader.h \
@@ -59,15 +50,6 @@ HEADERS += \
     properties_item.h \
     properties_widget.h \
     solution_runner.h \
-    solver/column_iteration_solver.h \
-    solver/material.h \
-    solver/properties_manager.h \
-    solver/row_iteration_solver.h \
-    solver/solver.h \
-    solver/table_value.h \
-    solver/tridiagonal.h \
-    solver/utils/matrix.h \
-    solver/utils/vector.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

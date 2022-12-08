@@ -10,6 +10,7 @@ public:
 
     void SaveToFile(QTextStream& file_stream);
 
+    double GetValue(const QString& name);
     QList<double> GetValues();
 
 private:
