@@ -14,10 +14,6 @@ public:
 
     void ProcessSolverOutput(int total_steps, int time_interval_ms);
 
-//    GridDataProcessor(Heatmap* heatmap,
-//                      int width, int height,
-//                      int total_steps, int timer_interval = 1000 / 30);
-
 signals:
     // 0 <= time_passed <= 1 -- current progress
     void DataUpdated(qreal time_passed);
