@@ -23,6 +23,7 @@ GridDataProcessor::GridDataProcessor(Heatmap *heatmap) : heatmap_(heatmap) {
 void GridDataProcessor::ProcessSolverOutput(int total_steps, int time_interval) {
     qDebug() << "ProcessSolverOutput";
     total_steps_ = total_steps;
+    default_timer_interval_ = std::max(1, time_interval);
     data_loader_.LoadData(total_steps);
     heatmap_->Resize(data_loader_.GetGridWidth(), data_loader_.GetGridHeight());
 }
@@ -69,7 +70,7 @@ void GridDataProcessor::SetCurrentProgress(qreal time_passed) {
 void GridDataProcessor::UpdateData() {
     current_step_++;
     if (current_step_ >= total_steps_) {
-        current_step_ = total_steps_;
+        current_step_ = total_steps_ - 1;
         Pause();
     }
 

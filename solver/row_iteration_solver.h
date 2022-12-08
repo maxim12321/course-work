@@ -5,19 +5,22 @@
 
 class RowIterationSolver {
 public:
-    explicit RowIterationSolver(PropertiesManager* properties);
+  explicit RowIterationSolver(PropertiesManager *properties);
 
-    Matrix CalculateNextIteration(const Matrix& prev_iter, const Matrix& prev_layer);
-
-private:
-    void BottomRow(const Matrix& prev_iter, const Matrix& prev_layer, Vector& row);
-    void MiddleRow(const Matrix& prev_iter, const Matrix& prev_layer, Vector& row, int k);
-    void TopRow(const Matrix& prev_iter, const Matrix& prev_layer, Vector& row);
+  Matrix CalculateNextIteration(const Matrix &prev_iter,
+                                const Matrix &prev_layer);
 
 private:
-    PropertiesManager* properties_;
+  void BottomRow(const Matrix &prev_iter, const Matrix &prev_layer,
+                 Vector &row);
+  void MiddleRow(const Matrix &prev_iter, const Matrix &prev_layer,
+                 Vector &row, int k);
+  void TopRow(const Matrix &prev_iter, const Matrix &prev_layer,
+              Vector &row);
 
-    int N_;
-    int M_;
+private:
+  PropertiesManager *properties_;
+
+  int N_;
+  int M_;
 };
-

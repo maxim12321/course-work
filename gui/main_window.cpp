@@ -44,7 +44,7 @@ void MainWindow::SaveProperties() {
     compute_button_->setEnabled(false);
     SolutionRunner::Run(properties_);
 
-    int layers = properties_->GetTimeLayersCount();
+    int layers = properties_->GetTimeLayersCount() + 1;
     double step_s = properties_->GetTimeStep();
     int step_ms = static_cast<int>(step_s * 1000);
     processor_->ProcessSolverOutput(layers, step_ms);

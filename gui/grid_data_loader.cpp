@@ -64,7 +64,6 @@ void GridDataLoader::LoadData(int size) {
     }
     height_ = height;
     width_ = width;
-    qDebug() << "GridDataLoader successfully loaded file";
 
     file.close();
 }

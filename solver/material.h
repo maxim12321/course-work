@@ -7,25 +7,25 @@
 
 class Material {
 public:
-    Material() = default;
-    // Material properties the properties of the metric come in the input file
-    explicit Material(std::ifstream& file, int id);
+  Material() = default;
+  // Material properties the properties of the metric come in the input file
+  explicit Material(std::ifstream &file, int id);
 
-    int GetId() const;
+  int GetId() const;
 
-    const TableValue& GetDensity() const;
-    const TableValue& GetHeatCapacity() const;
-    const TableValue& GetThermalConductivity() const;
-
-private:
-    void InitializeMaterial();
-
-    void ReadTableValues(std::ifstream& file, TableValue* table_value);
+  const TableValue &GetDensity() const;
+  const TableValue &GetHeatCapacity() const;
+  const TableValue &GetThermalConductivity() const;
 
 private:
-    int id_;
+  void InitializeMaterial();
 
-    TableValue density_;
-    TableValue heat_capacity_;
-    TableValue thermal_conductivity_;
+  void ReadTableValues(std::ifstream &file, TableValue *table_value);
+
+private:
+  int id_;
+
+  TableValue density_;
+  TableValue heat_capacity_;
+  TableValue thermal_conductivity_;
 };

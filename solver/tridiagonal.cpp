@@ -4,14 +4,12 @@
 
 const long double kEpsilon = 0.0000000001;
 
-bool TridiagonalAlgorithm(Matrix& matrix, Vector& right) {
-  //    std::cout << matrix << "\n" << right << "\n";
+bool TridiagonalAlgorithm(Matrix &matrix, Vector &right) {
   bool result = Gauss(matrix, right) && ReverseGauss(matrix, right);
-  //    std::cout << right << "\n" << std::endl;
   return result;
 }
 
-bool Gauss(Matrix& matrix, Vector& right) {
+bool Gauss(Matrix &matrix, Vector &right) {
   int n = matrix.GetRowCount();
 
   for (int i = 0; i < n - 1; i++) {
@@ -32,7 +30,7 @@ bool Gauss(Matrix& matrix, Vector& right) {
   return true;
 }
 
-bool ReverseGauss(const Matrix& matrix, Vector& right) {
+bool ReverseGauss(const Matrix &matrix, Vector &right) {
   int n = matrix.GetRowCount();
 
   for (int i = n - 1; i >= 0; i--) {

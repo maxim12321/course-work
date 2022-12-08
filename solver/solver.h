@@ -9,33 +9,33 @@
 
 class Solver {
 public:
-    using Callback = std::function<void(const Matrix&)>;
+  using Callback = std::function<void(const Matrix &)>;
 
-    Solver() = default;
-    Solver(int cells_x, int cells_z, PropertiesManager* properties, Callback callback);
+  Solver() = default;
+  Solver(PropertiesManager *properties, Callback callback);
 
-    void Start();
-
-private:
-    // Initialize fields with values from PropertiesManager...
-    void Initialize();
-
-    // Calculate new values for *temperature_* based on current values,
-    // invoke *on_layer_ready_* callback
-    void CalculateNextLayer();
-
-    bool HasConverged(const Matrix& current, const Matrix& next);
+  void Start();
 
 private:
-    PropertiesManager* properties_;
-    Callback on_layer_ready_;
+  // Initialize fields with values from PropertiesManager...
+  void Initialize();
 
-    int nx_;
-    int nz_;
+  // Calculate new values for *temperature_* based on current values,
+  // invoke *on_layer_ready_* callback
+  void CalculateNextLayer();
 
-    Matrix current_temp_;
-    Matrix previous_temp_;
+  bool HasConverged(const Matrix &current, const Matrix &next);
 
-    RowIterationSolver row_solver_;
-    ColumnIterationSolver column_solver_;
+private:
+  PropertiesManager *properties_;
+  Callback on_layer_ready_;
+
+  int nx_;
+  int nz_;
+
+  Matrix current_temp_;
+  Matrix previous_temp_;
+
+  RowIterationSolver row_solver_;
+  ColumnIterationSolver column_solver_;
 };
