@@ -2,9 +2,15 @@
 #include <iostream>
 
 #include "solver.h"
+#include <mpi.h>
+
+#define ROOT 0
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
+  int prs = 0;
+  int p = 0;
+
+  if (p == ROOT && argc != 3) {
     std::cerr << "The wrong number of arguments. Required 2, but got "
               << argc - 1 << "." << std::endl;
     std::cerr << "Usage: [input-file-path] [output-file-path]" << std::endl;
@@ -20,11 +26,13 @@ int main(int argc, char **argv) {
     std::cerr << "An error occurred while opening the input file" << std::endl;
     assert(false);
   }
-  Solver solver(&properties, [&](const Matrix &matrix) {
+
+  Solver solver(p, prs, &properties, [&](const Matrix &matrix) {
     out << matrix;
     out << "\n\n";
   });
   solver.Start();
+
   out.close();
 
   return 0;

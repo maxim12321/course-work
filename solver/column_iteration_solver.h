@@ -12,6 +12,8 @@ public:
                                 const Matrix &semi_prev_iter);
 
 private:
+  void BuildTridiagonal(const Matrix &prev_iter, const Matrix &semi_prev_iter,
+                        Vector &column, int i);
   void LeftColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
                   Vector &column);
   void MiddleColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
@@ -19,7 +21,12 @@ private:
   void RightColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
                    Vector &column);
 
+private:
   PropertiesManager *properties_;
+
   int N_;
   int M_;
+
+  Matrix tridiagonal_;
+  Matrix next_;
 };

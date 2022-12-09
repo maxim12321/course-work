@@ -172,7 +172,7 @@ std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx,
       --i;
       continue;
     }
-    remainder = dx - delta[i];
+    remainder = remainder > 1e-9 ? 0 : dx - delta[i];
     curr_pos += delta[i];
   }
   return std::make_pair(static_cast<int>(borders[0]),

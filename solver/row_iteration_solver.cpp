@@ -4,35 +4,36 @@
 #include <cassert>
 
 RowIterationSolver::RowIterationSolver(PropertiesManager *properties)
-    : properties_(properties) {}
+    : properties_(properties),
+      N_(properties_->GetGridWidth()),
+      M_(properties_->GetGridHeight()),
+      tridiagonal_(N_ + 2, 3),
+      next_(M_ + 2, N_ + 2) {}
 
 Matrix RowIterationSolver::CalculateNextIteration(const Matrix &prev_iter,
                                                   const Matrix &prev_layer) {
-  N_ = prev_iter.GetRowCount() - 2;
-  M_ = prev_iter.GetColumnCount() - 2;
-
-  Matrix next(M_ + 2, N_ + 2);
-
-  BottomRow(prev_iter, prev_layer, next[0]);
-
-#pragma omp parallel num_threads(8)
-  {
-#pragma omp for
-    for (int i = 1; i <= M_; ++i) {
-      MiddleRow(prev_iter, prev_layer, next[i], i);
-    }
+  for (int k = 0; k < M_ + 2; ++k) {
+    BuildTridiagonal(prev_iter, prev_layer, next_[k], k);
+    assert(TridiagonalAlgorithm(tridiagonal_, next_[k]));
   }
 
-  TopRow(prev_iter, prev_layer, next[M_ + 1]);
+  return next_.Transposed();
+}
 
-  next.Transpose();
-  return next;
+void RowIterationSolver::BuildTridiagonal(const Matrix &prev_iter,
+                                          const Matrix &prev_layer, Vector &row,
+                                          int k) {
+  if (k == 0) {
+    BottomRow(prev_iter, prev_layer, row);
+  } else if (k == M_ + 1) {
+    TopRow(prev_iter, prev_layer, row);
+  } else {
+    MiddleRow(prev_iter, prev_layer, row, k);
+  }
 }
 
 void RowIterationSolver::BottomRow(const Matrix &prev_iter,
                                    const Matrix &prev_layer, Vector &row) {
-  Matrix tridiagonal(N_ + 2, 3);
-
   auto Lambda = [&](int i) -> long double {
     int lambda_ind = i == N_ + 1 ? N_ : i;
     return properties_->GetThermalConductivity(lambda_ind, 0.5, prev_layer) /
@@ -53,11 +54,12 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
            properties_->GetAlpha1() / properties_->GetDeltaX(1) +
            properties_->GetAlpha3() / properties_->GetDeltaZ(1));
 
-  tridiagonal[0][0] = 1;
-  tridiagonal[0][1] =
+  tridiagonal_[0][0] = 1;
+  tridiagonal_[0][1] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(1)) *
       properties_->GetThermalConductivity(/*0.25*/ 0.5, 0, prev_layer) /
       (0.5 * properties_->GetDeltaX(1)) / R;
+  tridiagonal_[0][2] = 0;
 
   row[0] = (properties_->GetHeatCapacity(0, 0, prev_layer) *
                 properties_->GetDensity(0, 0, prev_layer) * prev_layer[0][0] +
@@ -79,11 +81,12 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
            properties_->GetAlpha2() / properties_->GetDeltaX(N_) +
            properties_->GetAlpha3() / properties_->GetDeltaZ(1));
 
-  tridiagonal[N_ + 1][1] = 1;
-  tridiagonal[N_ + 1][0] =
+  tridiagonal_[N_ + 1][1] = 1;
+  tridiagonal_[N_ + 1][0] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(N_)) *
       properties_->GetThermalConductivity(N_ - /*0.25*/ 0.5, 0, prev_layer) /
       (0.5 * properties_->GetDeltaX(N_)) / R;
+  tridiagonal_[N_ + 1][2] = 0;
 
   row[N_ + 1] =
       (properties_->GetHeatCapacity(N_, 0, prev_layer) *
@@ -98,20 +101,20 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
 
   // (i, 0) node, i = 1..N
   for (int i = 1; i <= N_; ++i) {
-    tridiagonal[i][0] =
+    tridiagonal_[i][0] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i - 0.5, 0, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i));
-    tridiagonal[i][2] =
+    tridiagonal_[i][2] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i + 0.5, 0, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i + 1));
-    tridiagonal[i][1] = properties_->GetHeatCapacity(i, 0, prev_layer) *
+    tridiagonal_[i][1] = properties_->GetHeatCapacity(i, 0, prev_layer) *
                             properties_->GetDensity(i, 0, prev_layer) +
-                        tridiagonal[i][0] + tridiagonal[i][2] +
+                        tridiagonal_[i][0] + tridiagonal_[i][2] +
                         properties_->GetDeltaT() * properties_->GetAlpha3() /
                             (0.25 * properties_->GetDeltaZ(1));
-    tridiagonal[i][1] *= -1;
+    tridiagonal_[i][1] *= -1;
 
     row[i] = properties_->GetHeatCapacity(i, 0, prev_layer) *
                  properties_->GetDensity(i, 0, prev_layer) * prev_layer[i][0] +
@@ -120,15 +123,11 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
                   Lambda(i));
     row[i] *= -1;
   }
-
-  assert(TridiagonalAlgorithm(tridiagonal, row));
 }
 
 void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
                                    const Matrix &prev_layer, Vector &row,
                                    int k) {
-  Matrix tridiagonal(N_ + 2, 3);
-
   // For (0, k) && (N + 1, k) doesn't match with same shit in doc
   auto Lambda_zz = [&](int i) {
     int lambda_x = i == N_ + 1 ? N_ : i;
@@ -154,11 +153,12 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
                (0.5 * properties_->GetDeltaX(1)) +
            properties_->GetAlpha1());
 
-  tridiagonal[0][0] = 1;
-  tridiagonal[0][1] =
+  tridiagonal_[0][0] = 1;
+  tridiagonal_[0][1] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(1)) *
       properties_->GetThermalConductivity(/*0.25*/ 0.5, k, prev_layer) /
       (0.5 * properties_->GetDeltaX(1)) / R;
+  tridiagonal_[0][2] = 0;
 
   row[0] = (properties_->GetHeatCapacity(0, k, prev_layer) *
                 properties_->GetDensity(0, k, prev_layer) * prev_layer[0][k] +
@@ -177,11 +177,12 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
                (0.5 * properties_->GetDeltaX(N_)) +
            properties_->GetAlpha2());
 
-  tridiagonal[N_ + 1][1] = 1;
-  tridiagonal[N_ + 1][0] =
+  tridiagonal_[N_ + 1][1] = 1;
+  tridiagonal_[N_ + 1][0] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(N_)) *
       properties_->GetThermalConductivity(N_ - /*0.25*/ 0.5, k, prev_layer) /
       (0.5 * properties_->GetDeltaX(N_)) / R;
+  tridiagonal_[N_ + 1][2] = 0;
 
   row[N_ + 1] =
       (properties_->GetHeatCapacity(N_, k, prev_layer) *
@@ -195,19 +196,19 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
   // (i, k), i = 1..N, nodes
   for (int i = 1; i <= N_; ++i) {
     // Probably without / 0.5
-    tridiagonal[i][0] =
+    tridiagonal_[i][0] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i - 0.5, k, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i));
-    tridiagonal[i][2] =
+    tridiagonal_[i][2] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i + 0.5, k, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i + 1));
 
-    tridiagonal[i][1] = properties_->GetHeatCapacity(i, k, prev_layer) *
+    tridiagonal_[i][1] = properties_->GetHeatCapacity(i, k, prev_layer) *
                             properties_->GetDensity(i, k, prev_layer) +
-                        tridiagonal[i][0] + tridiagonal[i][2];
-    tridiagonal[i][1] *= -1;
+                        tridiagonal_[i][0] + tridiagonal_[i][2];
+    tridiagonal_[i][1] *= -1;
 
     row[i] =
         properties_->GetHeatCapacity(i, k, prev_layer) *
@@ -216,14 +217,10 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
                                     properties_->GetHeatZ(i, k));
     row[i] *= -1;
   }
-
-  assert(TridiagonalAlgorithm(tridiagonal, row));
 }
 
 void RowIterationSolver::TopRow(const Matrix &prev_iter,
                                 const Matrix &prev_layer, Vector &row) {
-  Matrix tridiagonal(N_ + 2, 3);
-
   auto Lambda_z = [&](int i) -> long double {
     // according to doc
     int lambda_ind = i == N_ + 1 ? N_ : i;
@@ -243,11 +240,12 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
            properties_->GetAlpha1() / properties_->GetDeltaX(1) +
            properties_->GetAlpha4() / properties_->GetDeltaZ(M_));
 
-  tridiagonal[0][0] = 1;
-  tridiagonal[0][1] =
+  tridiagonal_[0][0] = 1;
+  tridiagonal_[0][1] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(1)) *
       properties_->GetThermalConductivity(/*0.25*/ 0.5, M_, prev_layer) /
       (0.5 * properties_->GetDeltaX(1)) / R;
+  tridiagonal_[0][2] = 0;
 
   row[0] =
       (properties_->GetHeatCapacity(0, M_, prev_layer) *
@@ -270,11 +268,12 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
            properties_->GetAlpha2() / properties_->GetDeltaX(N_) +
            properties_->GetAlpha4() / properties_->GetDeltaZ(M_));
 
-  tridiagonal[N_ + 1][0] =
+  tridiagonal_[N_ + 1][0] =
       -properties_->GetDeltaT() / (0.25 * properties_->GetDeltaX(N_)) *
       properties_->GetThermalConductivity(N_ - /*0.25*/ 0.5, M_, prev_layer) /
       (0.5 * properties_->GetDeltaX(N_)) / R;
-  tridiagonal[N_ + 1][1] = 1;
+  tridiagonal_[N_ + 1][1] = 1;
+  tridiagonal_[N_ + 1][2] = 0;
 
   row[N_ + 1] =
       (properties_->GetHeatCapacity(N_, M_, prev_layer) *
@@ -296,20 +295,20 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
       continue;
     }
 
-    tridiagonal[i][0] =
+    tridiagonal_[i][0] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i - 0.5, M_, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i));
-    tridiagonal[i][2] =
+    tridiagonal_[i][2] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i + 0.5, M_, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i + 1));
-    tridiagonal[i][1] = properties_->GetHeatCapacity(i, M_, prev_layer) *
+    tridiagonal_[i][1] = properties_->GetHeatCapacity(i, M_, prev_layer) *
                             properties_->GetDensity(i, M_, prev_layer) +
-                        tridiagonal[i][0] + tridiagonal[i][2] +
+                        tridiagonal_[i][0] + tridiagonal_[i][2] +
                         properties_->GetDeltaT() * properties_->GetAlpha4() /
                             (0.25 * properties_->GetDeltaZ(M_));
-    tridiagonal[i][1] *= -1;
+    tridiagonal_[i][1] *= -1;
 
     row[i] = properties_->GetHeatCapacity(i, M_, prev_layer) *
                  properties_->GetDensity(i, M_, prev_layer) *
@@ -337,23 +336,23 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
   for (int i = properties_->GetToolStartI() + 1;
        i <= properties_->GetToolFinishI(); ++i) {
     // Probably withouw / 0.5
-    tridiagonal[i][0] =
+    tridiagonal_[i][0] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i - 0.5, M_, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i));
-    tridiagonal[i][2] =
+    tridiagonal_[i][2] =
         properties_->GetDeltaT() *
         properties_->GetThermalConductivity(i + 0.5, M_, prev_layer) /
         (0.5 * properties_->GetDeltaX(i) * properties_->GetDeltaBackX(i + 1));
 
-    tridiagonal[i][1] =
+    tridiagonal_[i][1] =
         properties_->GetHeatCapacity(i, M_, prev_layer) *
             properties_->GetDensity(i, M_, prev_layer) +
-        tridiagonal[i][0] + tridiagonal[i][2] +
+        tridiagonal_[i][0] + tridiagonal_[i][2] +
         properties_->GetDeltaT() / properties_->GetToolWaveHeight() *
             properties_->GetThermalConductivity(i, M_, prev_layer) /
             (properties_->GetToolHeight() - properties_->GetToolPenetration());
-    tridiagonal[i][1] *= -1;
+    tridiagonal_[i][1] *= -1;
 
     row[i] = properties_->GetHeatCapacity(i, M_, prev_layer) *
                  properties_->GetDensity(i, M_, prev_layer) *
@@ -370,12 +369,12 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
   // correct (Nx * Ib + 1, M + 1) node
   {
     int i = properties_->GetToolStartI() + 1;
-    tridiagonal[i][1] += tridiagonal[i][0];
-    tridiagonal[i][0] *=
+    tridiagonal_[i][1] += tridiagonal_[i][0];
+    tridiagonal_[i][0] *=
         0.25 * properties_->GetDeltaZ(M_) / properties_->GetToolWaveHeight();
-    tridiagonal[i][1] -= tridiagonal[i][0];
+    tridiagonal_[i][1] -= tridiagonal_[i][0];
 
-    tridiagonal[i][1] -=
+    tridiagonal_[i][1] -=
         properties_->GetDeltaT() / properties_->GetDeltaX(i) *
         (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) /
         properties_->GetToolWaveHeight() * properties_->GetAlpha4();
@@ -392,12 +391,12 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
   // correct (Nx * If, M + 1) node
   {
     int i = properties_->GetToolFinishI();
-    tridiagonal[i][1] += tridiagonal[i][2];
-    tridiagonal[i][2] *=
+    tridiagonal_[i][1] += tridiagonal_[i][2];
+    tridiagonal_[i][2] *=
         0.25 * properties_->GetDeltaZ(M_) / properties_->GetToolWaveHeight();
-    tridiagonal[i][1] -= tridiagonal[i][2];
+    tridiagonal_[i][1] -= tridiagonal_[i][2];
 
-    tridiagonal[i][1] -=
+    tridiagonal_[i][1] -=
         properties_->GetDeltaT() / properties_->GetDeltaX(i) *
         (properties_->GetToolWaveHeight() - 0.25 * properties_->GetDeltaZ(M_)) /
         properties_->GetToolWaveHeight() * properties_->GetAlpha4();
@@ -410,6 +409,4 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
           0.25 * properties_->GetDeltaZ(M_)) *
              properties_->GetAlpha4() * properties_->GetOutTemperature());
   }
-
-  assert(TridiagonalAlgorithm(tridiagonal, row));
 }

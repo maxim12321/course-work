@@ -11,8 +11,7 @@ class Solver {
 public:
   using Callback = std::function<void(const Matrix &)>;
 
-  Solver() = default;
-  Solver(PropertiesManager *properties, Callback callback);
+  Solver(int p_rank, int p_size, PropertiesManager *properties, Callback callback);
 
   void Start();
 
@@ -24,9 +23,17 @@ private:
   // invoke *on_layer_ready_* callback
   void CalculateNextLayer();
 
+  void SchedulerRoutine();
+  void WorkerRoutine();
+
   bool HasConverged(const Matrix &current, const Matrix &next);
 
 private:
+  const int kSchedulerRank = 0;
+
+  int p_rank_;
+  int p_size_;
+
   PropertiesManager *properties_;
   Callback on_layer_ready_;
 

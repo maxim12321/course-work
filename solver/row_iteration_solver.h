@@ -11,6 +11,8 @@ public:
                                 const Matrix &prev_layer);
 
 private:
+  void BuildTridiagonal(const Matrix &prev_iter, const Matrix &prev_layer, Vector &row, int k);
+
   void BottomRow(const Matrix &prev_iter, const Matrix &prev_layer,
                  Vector &row);
   void MiddleRow(const Matrix &prev_iter, const Matrix &prev_layer,
@@ -23,4 +25,7 @@ private:
 
   int N_;
   int M_;
+
+  Matrix tridiagonal_;
+  Matrix next_;
 };
