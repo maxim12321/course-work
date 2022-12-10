@@ -1,9 +1,10 @@
 #pragma once
 
-#include "properties_manager.h"
+#include "properties_wrapper.h"
+
 #include "utils/matrix.h"
 
-class RowIterationSolver {
+class RowIterationSolver : public PropertiesWrapper {
 public:
   explicit RowIterationSolver(PropertiesManager *properties);
 
@@ -21,8 +22,6 @@ private:
               Vector &row);
 
 private:
-  PropertiesManager *properties_;
-
   int N_;
   int M_;
 

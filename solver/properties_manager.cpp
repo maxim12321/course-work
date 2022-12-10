@@ -131,6 +131,7 @@ void PropertiesManagerFabric::LoadNamedProperties(
     if (property_name_to_value.count(key) == 0) {
       std::cout << "Key [" << key << "] is missed from name to value map"
                 << std::endl;
+      assert(property_name_to_value.count(key) > 0);
     }
     auto ptr = property_name_to_value.at(key);
     if (ptr != nullptr) {
@@ -327,54 +328,19 @@ double PropertiesManager::GetAlpha4Tool() { return alpha4_tool_; }
 double PropertiesManager::GetOutTemperature() { return out_temp_; }
 
 // Physical properties getters
-double PropertiesManager::GetDensity(int x, int z, const Matrix &temperatures) {
+double PropertiesManager::GetDensity(int x, int z, double temp) {
   auto id = materials_grid_[x][z];
-  double temperature = temperatures[x][z];
-  return materials_[id].GetDensity().ApproximateAt(temperature);
+  return materials_[id].GetDensity().ApproximateAt(temp);
 }
 
-double PropertiesManager::GetHeatCapacity(int x, int z,
-                                          const Matrix &temperatures) {
+double PropertiesManager::GetHeatCapacity(int x, int z, double temp) {
   auto id = materials_grid_[x][z];
-  double temperature = temperatures[x][z];
-  return materials_[id].GetHeatCapacity().ApproximateAt(temperature);
+  return materials_[id].GetHeatCapacity().ApproximateAt(temp);
 }
 
-double PropertiesManager::GetThermalConductivity(double x, double z,
-                                                 const Matrix &temperatures) {
-  int x1 = std::floor(x);
-  int x2 = std::ceil(x);
-
-  int z1 = std::floor(z);
-  int z2 = std::ceil(z);
-
-  double int_part;
-  if (std::modf(x, &int_part) == 0.0) {
-    x1 = static_cast<int>(int_part);
-    x2 = x1;
-  } else if (std::modf(z, &int_part) == 0.0) {
-    z1 = static_cast<int>(int_part);
-    z2 = z1;
-  } else {
-    assert(false);
-    std::cout << "Oh, something wrong in indexes for thermal condactivity: "
-              << x << z;
-  }
-
-  assert(std::fabs((x1 * 1. + x2) / 2 - x) < 1e-9 &&
-         std::fabs((z1 * 1. + z2) / 2 - z) < 1e-9);
-
-  auto prev_id = materials_grid_[x1][z1];
-  double prev_temp = temperatures[x1][z1];
-  double prev_value =
-      materials_[prev_id].GetThermalConductivity().ApproximateAt(prev_temp);
-
-  auto next_id = materials_grid_[x2][z2];
-  double next_temp = temperatures[x2][z2];
-  double next_value =
-      materials_[next_id].GetThermalConductivity().ApproximateAt(next_temp);
-
-  return 2 * prev_value * next_value / (prev_value + next_value);
+double PropertiesManager::GetThermalConductivity(int x, int z, double temp) {
+  auto id = materials_grid_[x][z];
+  return materials_[id].GetThermalConductivity().ApproximateAt(temp);
 }
 
 // Delta getters
