@@ -1,11 +1,10 @@
 #include "column_iteration_solver.h"
-#include "tridiagonal.h"
 
 #include <cassert>
 
 ColumnIterationSolver::ColumnIterationSolver(PropertiesManager *properties)
     : PropertiesWrapper(properties), N_(properties->GetGridWidth()),
-      M_(properties->GetGridHeight()), tridiagonal_(M_ + 2, 3),
+      M_(properties->GetGridHeight()), tridiagonal_(M_ + 2),
       next_(N_ + 2, M_ + 2) {}
 
 Matrix

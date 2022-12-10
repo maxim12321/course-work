@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../properties_wrapper.h"
-
-#include "../utils/matrix.h"
+#include "properties_wrapper.h"
+#include "tridiagonal.h"
+#include "utils/matrix.h"
 
 class RowIterationSolver : public PropertiesWrapper {
 public:
@@ -25,6 +25,6 @@ private:
   int N_;
   int M_;
 
-  Matrix tridiagonal_;
+  TridiagonalMatrix tridiagonal_;
   Matrix next_;
 };

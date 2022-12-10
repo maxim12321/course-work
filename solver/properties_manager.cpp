@@ -347,22 +347,18 @@ double PropertiesManager::GetThermalConductivity(int x, int z, double temp) {
 double PropertiesManager::GetDeltaT() { return delta_t_; }
 
 double PropertiesManager::GetDeltaX(int i) {
-  assert(i > 0 && i + 1 < delta_x_.GetSize());
   return delta_x_[i];
 }
 
 double PropertiesManager::GetDeltaBackX(int i) {
-  assert(i > 0 && i < delta_x_.GetSize());
   return (delta_x_[i] + delta_x_[i - 1]) / 2;
 }
 
 double PropertiesManager::GetDeltaZ(int i) {
-  assert(i > 0 && i + 1 < delta_z_.GetSize());
   return delta_z_[i];
 }
 
 double PropertiesManager::GetDeltaBackZ(int i) {
-  assert(i > 0 && i < delta_z_.GetSize());
   return (delta_z_[i] + delta_z_[i - 1]) / 2;
 }
 
