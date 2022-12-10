@@ -68,9 +68,9 @@ public:
   double GetDeltaZ(int i);
   double GetDeltaBackZ(int i);
 
-  double GetDensity(int x, int z, const Matrix &temperatures);
-  double GetHeatCapacity(int x, int z, const Matrix &temperatures);
-  double GetThermalConductivity(double x, double z, const Matrix &temperatures);
+  double GetDensity(int x, int z, double temp);
+  double GetHeatCapacity(int x, int z, double temp);
+  double GetThermalConductivity(int x, int z, double temp);
 
   double GetToolHeight();
   double GetToolPenetration();

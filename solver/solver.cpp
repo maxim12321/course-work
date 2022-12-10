@@ -4,9 +4,13 @@
 
 #include <chrono>
 
-Solver::Solver(PropertiesManager *properties, Callback callback)
-    : properties_(properties), on_layer_ready_(std::move(callback)),
-      nx_(properties->GetGridWidth()), nz_(properties->GetGridHeight()),
+Solver::Solver(int p_rank, int p_size, PropertiesManager *properties,
+               Callback callback)
+    : p_rank_(p_rank), p_size_(p_size),
+      properties_(properties),
+      on_layer_ready_(std::move(callback)),
+      nx_(properties->GetGridWidth()),
+      nz_(properties->GetGridHeight()),
       row_solver_(properties), column_solver_(properties) {
   Initialize();
 }
@@ -29,7 +33,7 @@ void Solver::Start() {
 void Solver::Initialize() {
   current_temp_ = properties_->InitializeGrids(nx_, nz_);
   previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_);
+  on_layer_ready_(current_temp_.Transposed());
 }
 
 void Solver::CalculateNextLayer() {
@@ -63,4 +67,10 @@ bool Solver::HasConverged(const Matrix &current, const Matrix &next) {
     }
   }
   return true;
+}
+
+void Solver::SchedulerRoutine() {
+}
+
+void Solver::WorkerRoutine() {
 }

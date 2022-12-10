@@ -1,9 +1,9 @@
 #pragma once
 
-#include "properties_manager.h"
+#include "properties_wrapper.h"
 #include "utils/matrix.h"
 
-class ColumnIterationSolver {
+class ColumnIterationSolver : public PropertiesWrapper {
 public:
   explicit ColumnIterationSolver(PropertiesManager *properties);
 
@@ -12,6 +12,8 @@ public:
                                 const Matrix &semi_prev_iter);
 
 private:
+  void BuildTridiagonal(const Matrix &prev_iter, const Matrix &semi_prev_iter,
+                        Vector &column, int i);
   void LeftColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
                   Vector &column);
   void MiddleColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
@@ -19,7 +21,10 @@ private:
   void RightColumn(const Matrix &prev_iter, const Matrix &semi_prev_iter,
                    Vector &column);
 
-  PropertiesManager *properties_;
+private:
   int N_;
   int M_;
+
+  Matrix tridiagonal_;
+  Matrix next_;
 };
