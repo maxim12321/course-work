@@ -13,29 +13,8 @@ class Vector {
 
   int GetSize() const;
 
-  void Shift(int amount);
-
-  void AddValue(long double value = 0);
-  void PopValue();
-
   long double& operator[](int index);
   const long double& operator[](int index) const;
-
-  Vector operator+(const Vector& other) const;
-  Vector& operator+=(const Vector& other);
-
-  Vector operator-(const Vector& other) const;
-
-  Vector operator*(long double value) const;
-  Vector& operator*=(long double value);
-
-  void Add(const Vector& other, long double multiplier = 1, int shift = 0,
-           int left = 0, int right = -1);
-
-  void Multiply(long double multiplier, int left = 0, int right = -1);
-
-  long double Dot(const Vector& other) const;
-  long double Length() const;
 
  private:
   std::vector<long double> values_;

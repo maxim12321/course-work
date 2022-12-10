@@ -1,11 +1,10 @@
 #include "row_iteration_solver.h"
-#include "tridiagonal.h"
 
 #include <cassert>
 
 RowIterationSolver::RowIterationSolver(PropertiesManager *properties)
     : PropertiesWrapper(properties), N_(properties->GetGridWidth()),
-      M_(properties->GetGridHeight()), tridiagonal_(N_ + 2, 3),
+      M_(properties->GetGridHeight()), tridiagonal_(N_ + 2),
       next_(M_ + 2, N_ + 2) {}
 
 Matrix RowIterationSolver::CalculateNextIteration(const Matrix &prev_iter,

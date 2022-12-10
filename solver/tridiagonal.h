@@ -1,10 +1,32 @@
 #pragma once
 
+#include <vector>
+
 #include "utils/matrix.h"
 #include "utils/vector.h"
 
-bool TridiagonalAlgorithm(Matrix &matrix, Vector &right);
+class TridiagonalMatrix {
+public:
+  TridiagonalMatrix(int N);
 
-bool Gauss(Matrix &matrix, Vector &right);
+  int GetN() const;
 
-bool ReverseGauss(const Matrix &matrix, Vector &right);
+  void SwapRows(int row1, int row2);
+
+  void AddUpRows(int source, int dest, double source_mult);
+
+  void LeftShiftRow(int row);
+
+  std::vector<double> &operator[](int index);
+  const std::vector<double> &operator[](int index) const;
+
+private:
+  int N_;
+  std::vector<std::vector<double>> matrix_;
+};
+
+bool TridiagonalAlgorithm(TridiagonalMatrix &matrix, Vector &right);
+
+bool Gauss(TridiagonalMatrix &matrix, Vector &right);
+
+bool ReverseGauss(const TridiagonalMatrix &matrix, Vector &right);
