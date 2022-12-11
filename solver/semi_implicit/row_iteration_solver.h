@@ -1,8 +1,8 @@
 #pragma once
 
-#include "properties_wrapper.h"
+#include "../properties_wrapper.h"
 
-#include "utils/matrix.h"
+#include "../utils/matrix.h"
 
 class RowIterationSolver : public PropertiesWrapper {
 public:

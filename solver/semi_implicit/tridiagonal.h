@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utils/matrix.h"
-#include "utils/vector.h"
+#include "../utils/matrix.h"
+#include "../utils/vector.h"
 
 bool TridiagonalAlgorithm(Matrix &matrix, Vector &right);
 

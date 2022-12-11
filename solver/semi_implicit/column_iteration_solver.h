@@ -1,7 +1,7 @@
 #pragma once
 
-#include "properties_wrapper.h"
-#include "utils/matrix.h"
+#include "../properties_wrapper.h"
+#include "../utils/matrix.h"
 
 class ColumnIterationSolver : public PropertiesWrapper {
 public:

@@ -1,16 +1,21 @@
 #include <cassert>
 #include <iostream>
 
-#include "solver.h"
+#include "semi_implicit/semi_implicit_solver.h"
 #include <mpi.h>
 
-#define ROOT 0
+const int kMasterRank = 0;
 
 int main(int argc, char **argv) {
-  int prs = 0;
-  int p = 0;
+  MPI_Init(&argc, &argv);
 
-  if (p == ROOT && argc != 3) {
+  int process_count;
+  int current_rank;
+
+  MPI_Comm_size(MPI_COMM_WORLD, &process_count);
+  MPI_Comm_rank(MPI_COMM_WORLD, &current_rank);
+
+  if (current_rank == kMasterRank && argc != 3) {
     std::cerr << "The wrong number of arguments. Required 2, but got "
               << argc - 1 << "." << std::endl;
     std::cerr << "Usage: [input-file-path] [output-file-path]" << std::endl;
@@ -27,13 +32,14 @@ int main(int argc, char **argv) {
     assert(false);
   }
 
-  Solver solver(p, prs, &properties, [&](const Matrix &matrix) {
+  SemiImplicitSolver solver(current_rank, process_count, &properties, [&](const Matrix &matrix) {
     out << matrix;
     out << "\n\n";
   });
-  solver.Start();
+  solver.Solve();
 
   out.close();
 
+  MPI_Finalize();
   return 0;
 }
