@@ -2,20 +2,19 @@
 
 #include <functional>
 
+#include "../properties_manager.h"
+#include "../solver_base.h"
+#include "../utils/matrix.h"
 #include "column_iteration_solver.h"
-#include "properties_manager.h"
 #include "row_iteration_solver.h"
-#include "utils/matrix.h"
 
-class Solver {
-public:
-  using Callback = std::function<void(const Matrix &)>;
+class SemiImplicitSolver : public SolverBase {
+ public:
+  SemiImplicitSolver(int p_rank, int p_size, PropertiesManager* properties, Callback callback);
 
-  Solver(int p_rank, int p_size, PropertiesManager *properties, Callback callback);
+  void Solve() override;
 
-  void Start();
-
-private:
+ private:
   // Initialize fields with values from PropertiesManager...
   void Initialize();
 
@@ -26,17 +25,9 @@ private:
   void SchedulerRoutine();
   void WorkerRoutine();
 
-  bool HasConverged(const Matrix &current, const Matrix &next);
+  bool HasConverged(const Matrix& current, const Matrix& next);
 
-private:
-  const int kSchedulerRank = 0;
-
-  int p_rank_;
-  int p_size_;
-
-  PropertiesManager *properties_;
-  Callback on_layer_ready_;
-
+ private:
   int nx_;
   int nz_;
 

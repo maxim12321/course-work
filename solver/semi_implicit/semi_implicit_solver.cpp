@@ -1,21 +1,19 @@
-#include "solver.h"
+#include "semi_implicit_solver.h"
 
 #include <iostream>
 
 #include <chrono>
+#include <utility>
 
-Solver::Solver(int p_rank, int p_size, PropertiesManager *properties,
-               Callback callback)
-    : p_rank_(p_rank), p_size_(p_size),
-      properties_(properties),
-      on_layer_ready_(std::move(callback)),
+SemiImplicitSolver::SemiImplicitSolver(int p_rank, int p_size, PropertiesManager* properties, Callback callback)
+    : SolverBase(p_rank, p_size, properties, std::move(callback)),
       nx_(properties->GetGridWidth()),
       nz_(properties->GetGridHeight()),
       row_solver_(properties), column_solver_(properties) {
   Initialize();
 }
 
-void Solver::Start() {
+void SemiImplicitSolver::Solve() {
   auto start = std::chrono::steady_clock::now();
 
   for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
@@ -30,13 +28,13 @@ void Solver::Start() {
   std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 }
 
-void Solver::Initialize() {
+void SemiImplicitSolver::Initialize() {
   current_temp_ = properties_->InitializeGrids(nx_, nz_);
   previous_temp_ = current_temp_;
   on_layer_ready_(current_temp_.Transposed());
 }
 
-void Solver::CalculateNextLayer() {
+void SemiImplicitSolver::CalculateNextLayer() {
   for (int iteration = 0; iteration < properties_->GetMaxIterations();
        ++iteration) {
     Matrix semi_next =
@@ -55,13 +53,13 @@ void Solver::CalculateNextLayer() {
   on_layer_ready_(current_temp_.Transposed());
 }
 
-bool Solver::HasConverged(const Matrix &current, const Matrix &next) {
+bool SemiImplicitSolver::HasConverged(const Matrix& current, const Matrix& next) {
   for (int i = 0; i < current_temp_.GetRowCount(); ++i) {
     for (int j = 0; j < current_temp_.GetColumnCount(); ++j) {
       double delta = std::fabs(current[i][j] - next[i][j]);
 
       if (delta > properties_->GetEpsilon1() * current[i][j] +
-                      properties_->GetEpsilon2()) {
+          properties_->GetEpsilon2()) {
         return false;
       }
     }
@@ -69,8 +67,8 @@ bool Solver::HasConverged(const Matrix &current, const Matrix &next) {
   return true;
 }
 
-void Solver::SchedulerRoutine() {
+void SemiImplicitSolver::SchedulerRoutine() {
 }
 
-void Solver::WorkerRoutine() {
+void SemiImplicitSolver::WorkerRoutine() {
 }
