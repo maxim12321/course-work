@@ -1,17 +1,17 @@
 #include "properties_wrapper.h"
 
 PropertiesWrapper::PropertiesWrapper(PropertiesManager *manager)
-    : manager_(manager), 
-      dt(manager->GetDeltaT()),
+    : dt(manager->GetDeltaT()),
       alpha1(manager->GetAlpha1()),
       alpha2(manager->GetAlpha2()),
       alpha3(manager->GetAlpha3()),
       alpha4(manager->GetAlpha4()),
-      t_out(manager->GetOutTemperature()) {}
+      t_out(manager->GetOutTemperature()),
+      manager_(manager) {}
 
 void PropertiesWrapper::UpdateTemperatureLambda(const Matrix& temp) {
     get_temp_ = [temp](int x, int z) -> double {
-        return temp[x][z];
+        return temp(x, z);
     };
 }
 

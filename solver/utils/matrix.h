@@ -3,43 +3,50 @@
 #include <random>
 #include <vector>
 
-#include "vector.h"
+class Vector;
 
 class Matrix {
- public:
+  friend class Vector;
+
+public:
   Matrix();
   Matrix(int n, int m);
-  Matrix(const std::initializer_list<Vector>& list);
-
-  static Matrix Diagonal(int size, int diagonal_value = 1);
-  static Matrix Diagonal(const Vector& vector);
 
   int GetRowCount() const;
   int GetColumnCount() const;
 
-  void SwapRows(int row1, int row2);
+  Vector GetRow(int i);
+  Vector GetColumn(int i);
 
-  Matrix Transposed() const;
-  void Transpose();
+  double &operator()(int i, int j);
+  const double &operator()(int i, int j) const;
 
-  Vector MultiplyAsColumn(const Vector& other) const;
-  Vector MultiplyTransposedAsColumn(const Vector& other) const;
-
-  void AddRow(const Vector& row);
-
-  Vector& operator[](int index);
-  const Vector& operator[](int index) const;
-
-  Matrix operator*(const Matrix& other) const;
-
-  Matrix operator+(const Matrix& other) const;
-  Matrix& operator+=(const Matrix& other);
-
- private:
+private:
   int rows_;
   int columns_;
 
-  std::vector<Vector> row_values_;
+  std::vector<double> matrix_;
 };
 
-std::ostream& operator<<(std::ostream& out, const Matrix& matrix);
+// outputs the matrix in transposed form
+std::ostream &operator<<(std::ostream &out, const Matrix &matrix);
+
+class Vector {
+  friend class Matrix;
+
+private:
+  Vector(Matrix &base, int i, int j, int step, int size);
+
+public:
+  int GetSize() const;
+
+  double &operator[](int index);
+  const double &operator[](int index) const;
+
+private:
+  Matrix &base_;
+  int i_;
+  int j_;
+  int step_;
+  int size_;
+};

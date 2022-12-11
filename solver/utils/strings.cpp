@@ -9,7 +9,7 @@ std::vector<std::string> SplitString(std::string str, std::string delim) {
     }
     split.push_back(str);
 
-    return std::move(split);
+    return split;
 }
 
 // Read line from stream and check if stream is not eof
@@ -17,5 +17,5 @@ std::string ReadLine(std::istream& in) {
     assert(in.peek() != EOF);
     std::string line;
     std::getline(in, line);
-    return std::move(line);
+    return line;
 }

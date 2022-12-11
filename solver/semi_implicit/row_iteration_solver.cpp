@@ -5,18 +5,19 @@
 RowIterationSolver::RowIterationSolver(PropertiesManager *properties)
     : PropertiesWrapper(properties), N_(properties->GetGridWidth()),
       M_(properties->GetGridHeight()), tridiagonal_(N_ + 2),
-      next_(M_ + 2, N_ + 2) {}
+      next_(N_ + 2, M_ + 2) {}
 
 Matrix RowIterationSolver::CalculateNextIteration(const Matrix &prev_iter,
                                                   const Matrix &prev_layer) {
   UpdateTemperatureLambda(prev_layer);
 
   for (int k = 0; k < M_ + 2; ++k) {
-    BuildTridiagonal(prev_iter, prev_layer, next_[k], k);
-    assert(TridiagonalAlgorithm(tridiagonal_, next_[k]));
+    auto row = next_.GetColumn(k);
+    BuildTridiagonal(prev_iter, prev_layer, row, k);
+    assert(TridiagonalAlgorithm(tridiagonal_, row));
   }
 
-  return next_.Transposed();
+  return next_;
 }
 
 void RowIterationSolver::BuildTridiagonal(const Matrix &prev_iter,
@@ -36,7 +37,7 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
   auto Lambda = [&](int i) -> long double {
     int lambda_ind = i == N_ + 1 ? N_ : i;
     return lambda(lambda_ind, /*0.25*/ 0.5) / (0.5 * dz(1)) *
-           (prev_iter[i][1] - prev_iter[i][0]);
+           (prev_iter(i, 1) - prev_iter(i, 0));
   };
 
   long double R;
@@ -52,7 +53,7 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
     tridiagonal_[0][1] /= -R;
     tridiagonal_[0][2] = 0;
 
-    row[0] = c(0, 0) * rho(0, 0) * prev_layer[0][0] +
+    row[0] = c(0, 0) * rho(0, 0) * prev_layer(0, 0) +
              dt * t_out / 0.25 * (alpha1 / dx(1) + alpha3 / dz(1)) +
              dt * Lambda(0) / (0.25 * dz(1));
     row[0] /= R;
@@ -70,7 +71,7 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
     tridiagonal_[N_ + 1][0] /= -R;
     tridiagonal_[N_ + 1][2] = 0;
 
-    row[N_ + 1] = c(N_, 0) * rho(N_, 0) * prev_layer[N_ + 1][0] +
+    row[N_ + 1] = c(N_, 0) * rho(N_, 0) * prev_layer(N_ + 1, 0) +
                   dt * t_out / 0.25 * (alpha2 / dx(N_) + alpha3 / dz(1)) +
                   dt * Lambda(N_ + 1) / (0.25 * dz(1));
     row[N_ + 1] /= R;
@@ -84,7 +85,7 @@ void RowIterationSolver::BottomRow(const Matrix &prev_iter,
     tridiagonal_[i][1] += tridiagonal_[i][0] + tridiagonal_[i][2];
     tridiagonal_[i][1] *= -1;
 
-    row[i] = c(i, 0) * rho(i, 0) * prev_layer[i][0] +
+    row[i] = c(i, 0) * rho(i, 0) * prev_layer(i, 0) +
              dt / (0.25 * dz(1)) * (alpha3 * t_out + Lambda(i));
     row[i] *= -1;
   }
@@ -99,9 +100,9 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
     double lambda_z = i == 0 || i == N_ + 1 ? k + 1 : k + 0.5;
     // Probably with / 0.5
     return (lambda(lambda_x, lambda_z) *
-                (prev_iter[i][k + 1] - prev_iter[i][k]) / dzb(k + 1) -
+                (prev_iter(i, k + 1) - prev_iter(i, k)) / dzb(k + 1) -
             lambda(lambda_x, lambda_z - 1) *
-                (prev_iter[i][k] - prev_iter[i][k - 1]) / dzb(k)) /
+                (prev_iter(i, k) - prev_iter(i, k - 1)) / dzb(k)) /
            dz(k);
   };
 
@@ -116,7 +117,7 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
     tridiagonal_[0][1] /= -R;
     tridiagonal_[0][2] = 0;
 
-    row[0] = c(0, k) * rho(0, k) * prev_layer[0][k] +
+    row[0] = c(0, k) * rho(0, k) * prev_layer(0, k) +
              dt * (alpha1 * t_out / (0.25 * dx(1)) + Lambda_zz(0));
     row[0] /= R;
   }
@@ -132,7 +133,7 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
     tridiagonal_[N_ + 1][0] /= -R;
     tridiagonal_[N_ + 1][2] = 0;
 
-    row[N_ + 1] = c(N_, k) * rho(N_, k) * prev_layer[N_ + 1][k] +
+    row[N_ + 1] = c(N_, k) * rho(N_, k) * prev_layer(N_ + 1, k) +
                   dt * (alpha2 * t_out / (0.25 * dx(N_)) + Lambda_zz(N_ + 1));
     row[N_ + 1] /= R;
   }
@@ -147,7 +148,7 @@ void RowIterationSolver::MiddleRow(const Matrix &prev_iter,
     tridiagonal_[i][1] += tridiagonal_[i][0] + tridiagonal_[i][2];
     tridiagonal_[i][1] *= -1;
 
-    row[i] = c(i, k) * rho(i, k) * prev_layer[i][k] +
+    row[i] = c(i, k) * rho(i, k) * prev_layer(i, k) +
              dt * (Lambda_zz(i) + manager_->GetHeatX(i, k) +
                    manager_->GetHeatZ(i, k));
     row[i] *= -1;
@@ -160,7 +161,7 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
     // according to doc
     int lambda_ind = i == N_ + 1 ? N_ : i;
     return lambda(lambda_ind, M_ - /*0.25*/ 0.5) *
-           (prev_iter[i][M_ + 1] - prev_iter[i][M_]) / (0.5 * dz(M_));
+           (prev_iter(i, M_ + 1) - prev_iter(i, M_)) / (0.5 * dz(M_));
   };
 
   long double R;
@@ -175,7 +176,7 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
     tridiagonal_[0][1] /= -R;
     tridiagonal_[0][2] = 0;
 
-    row[0] = c(0, M_) * rho(0, M_) * prev_layer[0][M_ + 1] +
+    row[0] = c(0, M_) * rho(0, M_) * prev_layer(0, M_ + 1) +
              dt / (0.25 * dz(M_)) * (alpha4 * t_out - Lambda_z(0)) +
              dt / (0.25 * dx(1)) * alpha1 * t_out;
     row[0] /= R;
@@ -194,9 +195,9 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
     tridiagonal_[N_ + 1][0] /= -R;
     tridiagonal_[N_ + 1][2] = 0;
 
-    row[N_ + 1] = c(N_, M_) * rho(N_, M_) * prev_layer[N_ + 1][M_ + 1] +
-                   dt / (0.25 * dz(M_)) * (alpha3 * t_out - Lambda_z(N_ + 1)) +
-                   dt / (0.25 * dx(N_)) * alpha2 * t_out;
+    row[N_ + 1] = c(N_, M_) * rho(N_, M_) * prev_layer(N_ + 1, M_ + 1) +
+                  dt / (0.25 * dz(M_)) * (alpha3 * t_out - Lambda_z(N_ + 1)) +
+                  dt / (0.25 * dx(N_)) * alpha2 * t_out;
     row[N_ + 1] /= R;
   }
 
@@ -214,7 +215,7 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
     tridiagonal_[i][1] += tridiagonal_[i][0] + tridiagonal_[i][2];
     tridiagonal_[i][1] *= -1;
 
-    row[i] = c(i, M_) * rho(i, M_) * prev_layer[i][M_ + 1] +
+    row[i] = c(i, M_) * rho(i, M_) * prev_layer(i, M_ + 1) +
              dt / (0.25 * dz(M_)) * (-Lambda_z(i) + alpha4 * t_out);
     row[i] *= -1;
   }
@@ -246,7 +247,7 @@ void RowIterationSolver::TopRow(const Matrix &prev_iter,
     tridiagonal_[i][1] *= -1;
 
     row[i] =
-        c(i, M_) * rho(i, M_) * prev_layer[i][M_ + 1] +
+        c(i, M_) * rho(i, M_) * prev_layer(i, M_ + 1) +
         dt / manager_->GetToolWaveHeight() *
             (lambda(i, M_) * manager_->GetToolInitTemperature() /
                  (manager_->GetToolHeight() - manager_->GetToolPenetration()) -

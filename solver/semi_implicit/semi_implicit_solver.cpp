@@ -16,7 +16,7 @@ SemiImplicitSolver::SemiImplicitSolver(int p_rank,
 void SemiImplicitSolver::Solve() {
   auto start = std::chrono::steady_clock::now();
 
-  for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
+  for (int i = 0; i < properties_->GetTimeLayers(); ++i) {
     CalculateNextLayer();
     if (i % 100 == 0) {
       // Print some debug info for long calculations
@@ -28,7 +28,13 @@ void SemiImplicitSolver::Solve() {
   std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 }
 
-void SemiImplicitSolver::CalculateNextLayer() {
+void Solver::Initialize() {
+  current_temp_ = properties_->InitializeGrids(nx_, nz_);
+  previous_temp_ = current_temp_;
+  on_layer_ready_(current_temp_);
+}
+
+void Solver::CalculateNextLayer() {
   for (int iteration = 0; iteration < properties_->GetMaxIterations();
        ++iteration) {
     Matrix semi_next =
@@ -44,16 +50,16 @@ void SemiImplicitSolver::CalculateNextLayer() {
   }
 
   previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_.Transposed());
+  on_layer_ready_(current_temp_);
 }
 
 bool SemiImplicitSolver::HasConverged(const Matrix& current, const Matrix& next) {
   for (int i = 0; i < current_temp_.GetRowCount(); ++i) {
     for (int j = 0; j < current_temp_.GetColumnCount(); ++j) {
-      double delta = std::fabs(current[i][j] - next[i][j]);
+      double delta = std::fabs(current(i, j) - next(i, j));
 
-      if (delta > properties_->GetEpsilon1() * current[i][j] +
-          properties_->GetEpsilon2()) {
+      if (delta > properties_->GetEpsilon1() * current(i, j) +
+                      properties_->GetEpsilon2()) {
         return false;
       }
     }

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../utils/matrix.h"
-#include "../utils/vector.h"
+#include <vector>
+
+#include "utils/matrix.h"
 
 class TridiagonalMatrix {
 public:
