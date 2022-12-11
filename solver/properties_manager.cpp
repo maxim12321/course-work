@@ -75,7 +75,7 @@ PropertiesManagerFabric::CreateFieldsMap(PropertiesManager *manager) {
   name_to_field["alf_toG4g"] = &manager->alpha4_;
   name_to_field["alf_toG4gi"] = &manager->alpha4_tool_;
 
-  return std::move(name_to_field);
+  return name_to_field;
 }
 
 void PropertiesManagerFabric::LoadProperties(std::ifstream &file,
@@ -121,7 +121,7 @@ void PropertiesManagerFabric::LoadNamedProperties(
     std::ifstream &file,
     const std::map<std::string, double *> &property_name_to_value,
     size_t count) {
-  for (int i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     std::string line = ReadLine(file);
     auto key_value = SplitString(line, "|");
     assert(key_value.size() == 2);
@@ -155,18 +155,19 @@ void PropertiesManagerFabric::NormalizePropertiesMeasurmentUnits(
 }
 
 std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx,
-                                                     Vector &delta,
-                                                     Vector borders) {
+                                                     std::vector<double> &delta,
+                                                     std::vector<double> borders) {
   long double remainder = 0;
   long double curr_pos = 0;
 
+  int borders_size = borders.size();
   int j = 0;
   for (int i = 1; i <= n; ++i) {
     delta[i] = std::min(dx + remainder, borders[j] - curr_pos);
     if (delta[i] < 1e-9) {
       borders[j] = i - 1;
       ++j;
-      if (j == borders.GetSize()) {
+      if (j == borders_size) {
         std::cout << curr_pos << remainder << '\n';
         assert(i == n && curr_pos == borders[2] && remainder < 1e-9);
       }
@@ -189,20 +190,20 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
   tool_finish_ = total_length_ / 2 + tool_radius_;
 
   // + 2 according to enumeration in doc
-  delta_x_ = Vector(nx + 2);
+  delta_x_ = std::vector<double>(nx + 2);
   auto hor_indxs = ComputeDeltas(nx, total_length_ / nx, delta_x_,
                                  {tool_start_, tool_finish_, total_length_});
   i_tool_start_ = hor_indxs.first;
   i_tool_finish_ = hor_indxs.second;
 
   double current_x_position = 0;
-  x_position_ = Vector(nx + 2);
-  for (size_t i = 0; i < nx + 2; ++i) {
+  x_position_ = std::vector<double>(nx + 2);
+  for (int i = 0; i < nx + 2; ++i) {
     x_position_[i] = current_x_position + delta_x_[i] / 2;
     current_x_position += delta_x_[i];
   }
 
-  delta_z_ = Vector(nz + 2);
+  delta_z_ = std::vector<double>(nz + 2);
   auto vert_indxs = ComputeDeltas(
       nz, total_height_ / nz, delta_z_,
       {backing_height_, height_without_penetration_, total_height_});
@@ -216,19 +217,19 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
   Matrix init_temp(nx + 2, nz + 2);
   materials_grid_.assign(nx + 2, std::vector<int>(nz + 2));
 
-  for (size_t x = 0; x < nx + 2; ++x) {
-    for (size_t z = 0; z < nz + 2; ++z) {
+  for (int x = 0; x < nx + 2; ++x) {
+    for (int z = 0; z < nz + 2; ++z) {
       if (z <= i_plate_start_) {
-        init_temp[x][z] = backing_init_temp_;
+        init_temp(x, z) = backing_init_temp_;
         materials_grid_[x][z] = backing_material_i_;
       } else if (z <= i_tool_bottom_start_) {
-        init_temp[x][z] = plate_init_temp_;
+        init_temp(x, z) = plate_init_temp_;
         materials_grid_[x][z] = plate_material_i_;
       } else if (x <= i_tool_start_ || x > i_tool_finish_) {
-        init_temp[x][z] = plate_init_temp_;
+        init_temp(x, z) = plate_init_temp_;
         materials_grid_[x][z] = plate_material_i_;
       } else {
-        init_temp[x][z] = tool_init_temp_;
+        init_temp(x, z) = tool_init_temp_;
         materials_grid_[x][z] = tool_material_i_;
       }
     }

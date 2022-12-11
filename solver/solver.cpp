@@ -18,7 +18,7 @@ Solver::Solver(int p_rank, int p_size, PropertiesManager *properties,
 void Solver::Start() {
   auto start = std::chrono::steady_clock::now();
 
-  for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
+  for (int i = 0; i < properties_->GetTimeLayers(); ++i) {
     CalculateNextLayer();
     if (i % 100 == 0) {
       // Print some debug info for long calculations
@@ -33,7 +33,7 @@ void Solver::Start() {
 void Solver::Initialize() {
   current_temp_ = properties_->InitializeGrids(nx_, nz_);
   previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_.Transposed());
+  on_layer_ready_(current_temp_);
 }
 
 void Solver::CalculateNextLayer() {
@@ -52,15 +52,15 @@ void Solver::CalculateNextLayer() {
   }
 
   previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_.Transposed());
+  on_layer_ready_(current_temp_);
 }
 
 bool Solver::HasConverged(const Matrix &current, const Matrix &next) {
   for (int i = 0; i < current_temp_.GetRowCount(); ++i) {
     for (int j = 0; j < current_temp_.GetColumnCount(); ++j) {
-      double delta = std::fabs(current[i][j] - next[i][j]);
+      double delta = std::fabs(current(i, j) - next(i, j));
 
-      if (delta > properties_->GetEpsilon1() * current[i][j] +
+      if (delta > properties_->GetEpsilon1() * current(i, j) +
                       properties_->GetEpsilon2()) {
         return false;
       }

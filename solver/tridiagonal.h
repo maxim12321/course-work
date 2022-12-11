@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "utils/matrix.h"
-#include "utils/vector.h"
 
 class TridiagonalMatrix {
 public:

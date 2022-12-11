@@ -2,7 +2,6 @@
 
 #include "material.h"
 #include "utils/matrix.h"
-#include "utils/vector.h"
 
 #include <functional>
 #include <map>
@@ -93,8 +92,8 @@ public:
   int GetTimeLayers();
 
 private:
-  std::pair<int, int> ComputeDeltas(int n, long double dx, Vector &delta,
-                                    Vector borders);
+  std::pair<int, int> ComputeDeltas(int n, long double dx, std::vector<double> &delta,
+                                    std::vector<double> borders);
 
 private:
   std::vector<Material> materials_;
@@ -163,9 +162,9 @@ private:
   double time_layers_;
   double tool_words_;
 
-  Vector delta_x_;
-  Vector delta_z_;
+  std::vector<double> delta_x_;
+  std::vector<double> delta_z_;
 
   // For each cell stores x position of its center
-  Vector x_position_;
+  std::vector<double> x_position_;
 };
