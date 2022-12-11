@@ -13,6 +13,8 @@ add_executable(
         properties_wrapper.cpp
         table_value.cpp
 
+        explicit/explicit_solver.cpp
+
         semi_implicit/column_iteration_solver.cpp
         semi_implicit/row_iteration_solver.cpp
         semi_implicit/semi_implicit_solver.cpp

@@ -2,6 +2,7 @@
 #include <memory>
 #include <mpi.h>
 
+#include "explicit/explicit_solver.h"
 #include "semi_implicit/semi_implicit_solver.h"
 
 const int kMasterRank = 0;
@@ -59,7 +60,12 @@ int main(int argc, char** argv) {
         callback
     );
   } else if (solver_type == kExplicitSolverType) {
-    // TODO: solver = std::make_shared<ExplicitSolver>(...);
+    solver = std::make_shared<ExplicitSolver>(
+        current_rank,
+        process_count,
+        &properties,
+        callback
+    );
   }
 
   solver->Solve();
