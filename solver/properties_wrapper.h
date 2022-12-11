@@ -1,12 +1,13 @@
 #pragma once
 
-#include "properties_manager.h"
 #include <functional>
 
+#include "properties_manager.h"
+
 class PropertiesWrapper {
-public:
-  PropertiesWrapper(PropertiesManager *manager);
-  
+ public:
+  explicit PropertiesWrapper(PropertiesManager* manager);
+
   void UpdateTemperatureLambda(const Matrix& temp);
 
   double c(int x, int z);
@@ -25,8 +26,8 @@ public:
   double alpha4;
   double t_out;
 
-  PropertiesManager *manager_;
+  PropertiesManager* manager_;
 
-private:  
+ private:
   std::function<double(int x, int z)> get_temp_;
 };

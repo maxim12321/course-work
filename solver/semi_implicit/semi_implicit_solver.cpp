@@ -5,13 +5,13 @@
 #include <chrono>
 #include <utility>
 
-SemiImplicitSolver::SemiImplicitSolver(int p_rank, int p_size, PropertiesManager* properties, Callback callback)
+SemiImplicitSolver::SemiImplicitSolver(int p_rank,
+                                       int p_size,
+                                       PropertiesManager* properties,
+                                       Callback callback)
     : SolverBase(p_rank, p_size, properties, std::move(callback)),
-      nx_(properties->GetGridWidth()),
-      nz_(properties->GetGridHeight()),
-      row_solver_(properties), column_solver_(properties) {
-  Initialize();
-}
+      row_solver_(properties),
+      column_solver_(properties) {}
 
 void SemiImplicitSolver::Solve() {
   auto start = std::chrono::steady_clock::now();
@@ -26,12 +26,6 @@ void SemiImplicitSolver::Solve() {
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
   std::cout << "Elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
-}
-
-void SemiImplicitSolver::Initialize() {
-  current_temp_ = properties_->InitializeGrids(nx_, nz_);
-  previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_.Transposed());
 }
 
 void SemiImplicitSolver::CalculateNextLayer() {
