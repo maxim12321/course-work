@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QVector>
-#include <qcustomplot/qcustomplot.h>
+#include <../qcustomplot/qcustomplot.h>
 
 class Heatmap : public QCustomPlot {
 public:
@@ -10,7 +10,7 @@ public:
     void Resize(int width, int height);
 
 private:
-    static constexpr int kMaxTemperature = 120;
+    static constexpr int kMaxTemperature = 25;
 
 private:
     int width_;
