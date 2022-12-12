@@ -35,6 +35,9 @@ class Matrix {
   Matrix operator+(const Matrix& other) const;
   Matrix& operator+=(const Matrix& other);
 
+  void Store(std::ostream& out, int row_begin = 0, int row_end = -1) const;
+  static Matrix Load(std::istream& in);
+
  private:
   int rows_;
   int columns_;

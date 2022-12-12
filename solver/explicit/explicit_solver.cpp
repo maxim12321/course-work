@@ -2,18 +2,25 @@
 
 #include <chrono>
 #include <iostream>
-#include <cassert>
+#include <mpi.h>
 
 ExplicitSolver::ExplicitSolver(int p_rank,
                                int p_size,
                                PropertiesManager* properties,
-                               SolverBase::Callback callback)
-    : SolverBase(p_rank, p_size, properties, std::move(callback)),
-      PropertiesWrapper(properties) {
+                               const std::string& result_file_name)
+    : SolverBase(p_rank, p_size, properties, [](auto) {}),
+      PropertiesWrapper(properties),
+      rows_per_process_((nx_ + 2 + p_size - 1) / p_size),
+      row_begin_(p_rank * rows_per_process_),
+      row_end_((p_rank + 1) * rows_per_process_),
+      output_(result_file_name, std::ios::out) {
+  std::cout << "[#" << p_rank << "]: " << row_begin_ << "-" << row_end_ << std::endl;
 }
 
 void ExplicitSolver::Solve() {
   auto start = std::chrono::steady_clock::now();
+
+  current_temp_.Store(output_, row_begin_, row_end_);
 
   for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
     CalculateNextLayer();
@@ -21,6 +28,8 @@ void ExplicitSolver::Solve() {
       // Print some debug info for long calculations
     }
   }
+
+  output_.close();
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed_seconds = end - start;
@@ -30,14 +39,34 @@ void ExplicitSolver::Solve() {
 void ExplicitSolver::CalculateNextLayer() {
   UpdateTemperatureLambda(previous_temp_);
 
-  for (int i = 0; i <= nx_ + 1; ++i) {
+  if (p_rank_ > 0) {
+    MPI_Status status;
+    MPI_Recv(previous_temp_[row_begin_ - 1].Data(), nz_ + 2, MPI_LONG_DOUBLE, p_rank_ - 1,
+             100, MPI_COMM_WORLD, &status);
+
+    MPI_Send(previous_temp_[row_begin_].Data(), nz_ + 2, MPI_LONG_DOUBLE, p_rank_ - 1,
+             101, MPI_COMM_WORLD);
+  }
+  if (p_rank_ + 1 < p_size_) {
+    MPI_Send(previous_temp_[row_end_ - 1].Data(), nz_ + 2, MPI_LONG_DOUBLE, p_rank_ + 1,
+             100, MPI_COMM_WORLD);
+
+    MPI_Status status;
+    MPI_Recv(previous_temp_[row_end_].Data(), nz_ + 2, MPI_LONG_DOUBLE, p_rank_ + 1,
+             101, MPI_COMM_WORLD, &status);
+  }
+
+  int row_end = std::min(row_end_, nx_ + 2);
+
+// #pragma omp parallel for num_threads(4)
+  for (int i = row_begin_; i < row_end; ++i) {
     for (int k = 0; k <= nz_ + 1; ++k) {
       current_temp_[i][k] = GetNodeValue(i, k);
     }
   }
 
   previous_temp_ = current_temp_;
-  on_layer_ready_(current_temp_.Transposed());
+  current_temp_.Store(output_, row_begin_, row_end_);
 }
 
 long double ExplicitSolver::GetNodeValue(int i, int k) {
@@ -49,7 +78,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
 
   // i=0, 0<=k<=M+1
   auto lambda_x_0k = [&](int k) -> long double {
-    assert(k >= 0 && k <= M + 1);
     // TODO: maybe k+0.5, as in lambda_x_Nk
     int lambda_z = std::min(M, k);
     return lambda(0.25, lambda_z) * (T(1, k) - T(0, k)) / (0.5 * dx(1));
@@ -57,7 +85,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
 
   // i=N+1, 0<=k<=M+1
   auto lambda_x_Nk = [&](int k) -> long double {
-    assert(k >= 0 && k <= M + 1);
     double lambda_z = k + 0.5;
     if (k == 0) {
       lambda_z = 0;
@@ -79,21 +106,18 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
 
   // 0<=i<=N+1, k=0
   auto lambda_z_i0 = [&](int i) -> long double {
-    assert(i >= 0 || i <= N + 1);
     int lambda_x = std::min(N, i);
     return lambda(lambda_x, 0.25) * (T(i, 1) - T(i, 0)) / (0.5 * dz(1));
   };
 
   // 0<=i<=M+1, k=M+1
   auto lambda_z_iM = [&](int i) -> long double {
-    assert(i >= 0 || i <= N + 1);
     int lambda_x = std::min(N, i);
     return lambda(lambda_x, M - 0.25) * (T(i, M + 1) - T(i, M)) / (0.5 * dz(M));
   };
 
   // 1<=i<=N, k=0
   auto lambda_xx_i0 = [&](int i) -> long double {
-    assert(i >= 1 && i <= N);
     return (
         lambda(i + 0.5, 0) * (T(i + 1, 0) - T(i, 0)) / (0.5 * dxb(i + 1)) -
             lambda(i - 0.5, 0) * (T(i, 0) - T(i - 1, 0)) / (0.5 * dxb(i))
@@ -102,7 +126,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
 
   // 1<=i<=N, k=M+1
   auto lambda_xx_iM = [&](int i) -> long double {
-    assert(i >= 1 && i <= N);
     return (
         lambda(i + 0.5, M) * (T(i + 1, M + 1) - T(i, M + 1)) / dxb(i + 1) -
             lambda(i - 0.5, M) * (T(i, M + 1) - T(i - 1, M + 1)) / dxb(i)
@@ -110,7 +133,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
   };
 
   auto lambda_xx_ik = [&](int i, int k) -> long double {
-    assert(i >= 1 && i <= N && k >= 1 && k <= M);
     return (
         lambda(i + 0.5, k) * (T(i + 1, k) - T(i, k)) / (0.5 * dxb(i + 1)) -
             lambda(i - 0.5, k) * (T(i, k) - T(i - 1, k)) / (0.5 * dxb(i))
@@ -119,7 +141,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
 
   // i=0 or i=N+1, 1<=k<=M
   auto lambda_zz_0k = [&](int i, int k) -> long double {
-    assert((i == 0 || i == N + 1) && k >= 1 && k <= M);
     int lambda_x = std::min(N, i);
     /// lambda(x, k+1) - lambda(x, k) in doc
     return (
@@ -129,7 +150,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
   };
 
   auto lambda_zz_tool = [&](int i) -> long double {
-    assert(i >= manager_->GetToolStartI() + 1 && i <= manager_->GetToolFinishI());
     return (
         lambda(i, M) * (manager_->GetToolInitTemperature() - T(i, M + 1)) / height_diff -
             lambda(i, M - 0.25) * (T(i, M + 1) - T(i, M)) / (0.5 * dz(M))
@@ -137,7 +157,6 @@ long double ExplicitSolver::GetNodeValue(int i, int k) {
   };
 
   auto lambda_zz_ik = [&](int i, int k) -> long double {
-    assert(i >= 1 && i <= N && k >= 1 && k <= M);
     return (
         lambda(i, k + 0.5) * (T(i, k + 1) - T(i, k)) / dzb(k + 1) -
             lambda(i, k - 0.5) * (T(i, k) - T(i, k - 1)) / dzb(k)

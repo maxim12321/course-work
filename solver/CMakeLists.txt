@@ -28,3 +28,6 @@ add_executable(
 # MPI
 find_package(MPI REQUIRED)
 target_link_libraries(solver PUBLIC MPI::MPI_CXX)
+
+#find_package(OpenMP REQUIRED)
+#target_link_libraries(solver PUBLIC OpenMP::OpenMP_CXX)

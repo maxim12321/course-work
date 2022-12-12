@@ -8,6 +8,11 @@
 const int kMasterRank = 0;
 const std::string kSemiImplicitSolverType = "semi-implicit";
 const std::string kExplicitSolverType = "explicit";
+const std::string kProcessResultsFilePrefix = "results_";
+
+std::string GetResultsFileName(int process_rank) {
+  return kProcessResultsFilePrefix + std::to_string(process_rank) + ".txt";
+}
 
 int main(int argc, char** argv) {
   MPI_Init(&argc, &argv);
@@ -39,15 +44,9 @@ int main(int argc, char** argv) {
 
   auto properties = PropertiesManagerFabric::Create(input_filepath);
 
-  std::ofstream out(output_filepath, std::ios::out);
-  if (out.fail()) {
-    std::cerr << "An error occurred while opening the input file" << std::endl;
-    return 2;
-  }
-
-  auto callback = [&out](const Matrix& matrix) {
-    out << matrix;
-    out << "\n\n";
+  std::ofstream process_results(GetResultsFileName(current_rank), std::ios::out);
+  auto callback = [&process_results](const Matrix& matrix) {
+    matrix.Store(process_results);
   };
 
   std::shared_ptr<SolverBase> solver;
@@ -64,13 +63,44 @@ int main(int argc, char** argv) {
         current_rank,
         process_count,
         &properties,
-        callback
+        GetResultsFileName(current_rank)
     );
   }
 
   solver->Solve();
 
-  out.close();
+  // Wait for all processes to finish
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  // TODO: collect results into out
+  if (current_rank == kMasterRank) {
+    std::ofstream out(output_filepath, std::ios::out);
+    if (out.fail()) {
+      std::cerr << "An error occurred while opening the input file" << std::endl;
+      return 2;
+    }
+
+    std::vector<std::ifstream> results;
+    results.reserve(process_count);
+    for (int i = 0; i < process_count; ++i) {
+      results.emplace_back(GetResultsFileName(i), std::ios::in);
+    }
+
+    for (int time = 0; time <= properties.GetTimeLayers(); ++time) {
+      Matrix result(0, 0);
+
+      for (int i = 0; i < process_count; ++i) {
+        Matrix rows = Matrix::Load(results[i]);
+        for (int row = 0; row < rows.GetRowCount(); ++row) {
+          result.AddRow(rows[row]);
+        }
+      }
+
+      out << result.Transposed() << "\n\n";
+    }
+
+    out.close();
+  }
 
   MPI_Finalize();
   return 0;

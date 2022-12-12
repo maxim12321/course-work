@@ -37,6 +37,9 @@ class Vector {
   long double Dot(const Vector& other) const;
   long double Length() const;
 
+  long double* Data();
+  const long double* Data() const;
+
  private:
   std::vector<long double> values_;
 };

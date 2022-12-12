@@ -1,3 +1,4 @@
+#include <iostream>
 #include "matrix.h"
 
 Matrix::Matrix() : Matrix(0, 0) {}
@@ -121,6 +122,38 @@ void Matrix::AddRow(const Vector& row) {
 
   row_values_.push_back(row);
   rows_++;
+}
+
+void Matrix::Store(std::ostream& out, int row_begin, int row_end) const {
+  row_end = (row_end >= 0 ? std::min(row_end, rows_) : rows_);
+
+  out << row_end - row_begin << " " << columns_ << "\n";
+  for (int i = row_begin; i < row_end; ++i) {
+    for (int j = 0; j < columns_; ++j) {
+      out << row_values_[i][j] << " ";
+    }
+    out << "\n";
+  }
+}
+
+Matrix Matrix::Load(std::istream& in) {
+  std::string temp;
+  int rows, columns;
+
+  in >> temp;
+  rows = std::stoi(temp);
+
+  in >> temp;
+  columns = std::stoi(temp);
+
+  Matrix result(rows, columns);
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < columns; ++j) {
+      in >> temp;
+      result[i][j] = std::stold(temp);
+    }
+  }
+  return result;
 }
 
 std::ostream& operator<<(std::ostream& out, const Matrix& matrix) {
