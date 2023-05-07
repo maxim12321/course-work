@@ -1,5 +1,5 @@
 #include "material.h"
-#include "utils/strings.h"
+#include "../utils/strings.h"
 
 #include <cassert>
 #include <fstream>

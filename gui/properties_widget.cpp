@@ -33,6 +33,10 @@ double PropertiesWidget::GetTimeStep() {
     return method_properties_->GetValue("tau");
 }
 
+double PropertiesWidget::GetOutTemp() {
+    return heat_exch_properties_->GetValue("TeOut");
+}
+
 void PropertiesWidget::SaveToFile(const QString& file_name) {
     QFile file(file_name);
     if(!file.open(QIODevice::WriteOnly)) {

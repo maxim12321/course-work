@@ -4,40 +4,49 @@
 
 #include "explicit/explicit_solver.h"
 #include "semi_implicit/semi_implicit_solver.h"
+#include "properties/properties_manager.h"
 
 const int kMasterRank = 0;
-const std::string kSemiImplicitSolverType = "semi-implicit";
-const std::string kExplicitSolverType = "explicit";
-
 int main(int argc, char** argv) {
-  MPI_Init(&argc, &argv);
+  // MPI_Init(&argc, &argv);
 
-  int process_count;
-  int current_rank;
+  // int process_count;
+  // int current_rank;
 
-  MPI_Comm_size(MPI_COMM_WORLD, &process_count);
-  MPI_Comm_rank(MPI_COMM_WORLD, &current_rank);
+  // MPI_Comm_size(MPI_COMM_WORLD, &process_count);
+  // MPI_Comm_rank(MPI_COMM_WORLD, &current_rank);
 
-  if (current_rank == kMasterRank && argc < 3) {
+  // if (current_rank == kMasterRank && argc < 3) {
+  //   std::cerr << "The wrong number of arguments. Required 2, but got "
+  //             << argc - 1 << "." << std::endl;
+  //   std::cerr << "Usage: [input-file-path] [output-file-path] [solver-type, default: "
+  //             << kSemiImplicitSolverType << "]"
+  //             << std::endl;
+  //   return 1;
+  // }
+  if (argc < 3) {
     std::cerr << "The wrong number of arguments. Required 2, but got "
               << argc - 1 << "." << std::endl;
     std::cerr << "Usage: [input-file-path] [output-file-path] [solver-type, default: "
-              << kSemiImplicitSolverType << "]"
+              << kSemiImplicitSolverName << "]"
               << std::endl;
     return 1;
   }
 
   std::string input_filepath = argv[1];
   std::string output_filepath = argv[2];
-  std::string solver_type = (argc == 3 ? kSemiImplicitSolverType : argv[3]);
+  std::string solver_name = (argc == 3 ? kSemiImplicitSolverName : argv[3]);
 
-  if (solver_type != kSemiImplicitSolverType && solver_type != kExplicitSolverType) {
-    std::cerr << "Invalid solver type! Must be one of [" << kSemiImplicitSolverType << ", "
-              << kExplicitSolverType << "]" << std::endl;
+  if (kSolverNameToType.count(solver_name) == 0) {
+    std::string valid_solver_types;
+    for (const auto &solvers : kSolverNameToType) {
+        valid_solver_types += solvers.first + " ";
+    }
+    std::cerr << "Invalid solver type! Must be one of [ " << valid_solver_types <<  "]" << std::endl;
     return 1;
   }
 
-  auto properties = PropertiesManagerFabric::Create(input_filepath);
+  auto properties = PropertiesLoader::Load(input_filepath);
 
   std::ofstream out(output_filepath, std::ios::out);
   if (out.fail()) {
@@ -50,28 +59,32 @@ int main(int argc, char** argv) {
     out << "\n\n";
   };
 
+  SolverType solver_type = kSolverNameToType.at(solver_name);
   std::shared_ptr<SolverBase> solver;
 
-  if (solver_type == kSemiImplicitSolverType) {
+  switch (solver_type) {
+  case SolverType::SemiImplicit:
     solver = std::make_shared<SemiImplicitSolver>(
-        current_rank,
-        process_count,
+        0,
+        0,
         &properties,
         callback
     );
-  } else if (solver_type == kExplicitSolverType) {
-    solver = std::make_shared<ExplicitSolver>(
-        current_rank,
-        process_count,
-        &properties,
-        callback
-    );
+    break;
+  case SolverType::Explicit:
+    // solver = std::make_shared<ExplicitSolver>(
+    //   0,
+    //   0,
+    //   &properties,
+    //   callback
+    // );
+    break;
   }
 
   solver->Solve();
 
   out.close();
 
-  MPI_Finalize();
+  // MPI_Finalize();
   return 0;
 }
