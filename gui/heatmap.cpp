@@ -10,7 +10,7 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 
     color_map_ = new QCPColorMap(xAxis, yAxis);
 
-    QCPRange range(20, kMaxTemperature);
+    QCPRange range(kMinTemperature, kMaxTemperature);
     QCPColorScale *colorScale = new QCPColorScale(this);
     colorScale->setDataRange(range);
 
@@ -34,7 +34,10 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 void Heatmap::SetValues(const QVector<QVector<double>>& data) {
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {
-            color_map_->data()->setCell(x, y, data[y][x] - 273);
+            double value = data[y][x] - 273;
+            value = std::min(value, 1. * kMaxTemperature);
+            value = std::max(value, 1. * kMinTemperature);
+            color_map_->data()->setCell(x, y, value);
         }
     }
     replot();

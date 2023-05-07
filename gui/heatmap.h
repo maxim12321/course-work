@@ -11,6 +11,7 @@ public:
 
 private:
     static constexpr int kMaxTemperature = 25;
+    static constexpr int kMinTemperature = 20;
 
 private:
     int width_;
