@@ -2,10 +2,14 @@
 
 #include <iostream>
 
-const long double kEpsilon = 0.0000000001;
+#include "../utils/math.h"
 
 TridiagonalMatrix::TridiagonalMatrix(int N)
     : N_(N), matrix_(N, std::vector<double>(3, 0)) {}
+
+void TridiagonalMatrix::SetN(int N) {
+  N_ = N;
+}
 
 int TridiagonalMatrix::GetN() const {
   return N_;

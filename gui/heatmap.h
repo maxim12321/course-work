@@ -16,4 +16,6 @@ private:
     int width_;
     int height_;
     QCPColorMap *color_map_;
+    QCPColorScale *color_scale_;
+
 };

@@ -21,10 +21,13 @@ public:
   double &operator()(int i, int j);
   const double &operator()(int i, int j) const;
 
-private:
+protected:
+  Vector GetVector(int i, int j, int step, int size);
+
   int rows_;
   int columns_;
 
+private:
   std::vector<double> matrix_;
 };
 
@@ -34,6 +37,43 @@ std::ostream &operator<<(std::ostream &out, const Matrix &matrix);
 class Vector {
   friend class Matrix;
 
+public:
+  class Iterator {
+    friend class Vector;
+
+  public:
+    Iterator() = default;
+    Iterator(const Iterator &it);
+
+    Iterator &operator++();
+
+    friend Iterator operator+(Iterator iter, int offset) {
+      Vector::Iterator new_iter(iter);
+      new_iter.vector_index_ += offset;
+      return new_iter;
+    }
+
+    friend Iterator operator-(Iterator iter, int offset) {
+      Vector::Iterator new_iter(iter);
+      new_iter.vector_index_ -= offset;
+      return new_iter;
+    }
+
+    bool operator==(Iterator other) const;
+    bool operator!=(Iterator other) const;
+
+    double &operator*();
+    const double &operator*() const;
+
+    std::pair<int, int> Index();
+  private:
+    Vector *base_;
+    int step_;
+    int vector_index_;
+    int matrix_start_index_;
+    int matrix_column_size_;
+  };
+
 private:
   Vector(Matrix &base, int i, int j, int step, int size);
 
@@ -42,6 +82,9 @@ public:
 
   double &operator[](int index);
   const double &operator[](int index) const;
+
+  Iterator begin();
+  Iterator end();
 
 private:
   Matrix &base_;

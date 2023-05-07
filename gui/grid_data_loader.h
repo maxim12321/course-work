@@ -7,7 +7,7 @@ class GridDataLoader {
 public:
     GridDataLoader() = default;
 
-    void LoadData(int size);
+    void LoadData(int size, double out_temp);
 
     int GetGridWidth();
     int GetGridHeight();

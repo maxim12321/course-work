@@ -2,11 +2,15 @@
 
 #include <vector>
 
-#include "utils/matrix.h"
+#include "../utils/matrix.h"
 
 class TridiagonalMatrix {
 public:
   TridiagonalMatrix(int N);
+
+  // Resize matrix size without reallocations
+  // Useful for using existing matrix for system with smaller sizes
+  void SetN(int N);
 
   int GetN() const;
 

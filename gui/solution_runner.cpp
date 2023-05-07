@@ -25,7 +25,7 @@ void SolutionRunner::Run(PropertiesWidget* properties) {
     process->setWorkingDirectory(kSolverInputFilePath);
     process->start("./" + kRunnerFileName);
 
-    process->waitForFinished();
+    process->waitForFinished(-1);
 
     qDebug() << "STDOUT:\n" << process->readAllStandardOutput() << "\n";
     if (process->exitCode() != 0) {

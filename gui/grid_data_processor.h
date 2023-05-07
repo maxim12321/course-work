@@ -12,7 +12,7 @@ class GridDataProcessor : public QObject {
 public:
     GridDataProcessor(Heatmap *heatmap);
 
-    void ProcessSolverOutput(int total_steps, int time_interval_ms);
+    void ProcessSolverOutput(int total_steps, int time_interval_ms, double out_temp);
 
 signals:
     // 0 <= time_passed <= 1 -- current progress

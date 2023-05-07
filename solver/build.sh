@@ -1,3 +1,8 @@
 #! /usr/bin/env sh
 
-cp ./cmake-build-debug/solver ../gui/resources/solver/solver
+mkdir -p build
+cd ./build
+cmake .. -B ./
+make
+cp solver ../solver
+cp solver ../../gui/resources/solver

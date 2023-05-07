@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <cassert>
 
-void GridDataLoader::LoadData(int size) {
+void GridDataLoader::LoadData(int size, double out_temp) {
     QFile file(kOutputFileName);
     if(!file.open(QIODevice::ReadOnly)) {
         throw std::runtime_error("error opening file: " + file.error());
@@ -56,6 +56,11 @@ void GridDataLoader::LoadData(int size) {
             assert(vals_str.size() == width);
             for (int column = 0; column < width; column++) {
                 vals[column] = vals_str[column].toDouble();
+                // solver does not process nodes outside compute domain
+                // so we need explicitly put out_temp there
+                if (vals[column] == 0) {
+                    vals[column] = out_temp - 1;
+                }
             }
             matrix[row] = vals;
         }

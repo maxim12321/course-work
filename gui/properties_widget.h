@@ -17,6 +17,7 @@ public:
 
     int GetTimeLayersCount();
     double GetTimeStep();
+    double GetOutTemp();
 
 private:
     void SaveMaterialPropertiesToFile(QTextStream& file_stream, int material_id);
