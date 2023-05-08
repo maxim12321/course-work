@@ -405,7 +405,7 @@ double PropertiesManager::GetHeatX(int x, int z) {
     return 0;
   }
 
-  if (x == i_tool_start_ || i_tool_finish_ + 1) {
+  if (x == i_tool_start_ || x == i_tool_finish_ + 1) {
     return GetHeatOutputX() / delta_x_[x];
   }
   return 0;

@@ -18,6 +18,8 @@ ExplicitSolver::ExplicitSolver(int p_rank,
 }
 
 void ExplicitSolver::Solve() {
+  PrepareNodeEdges();
+
   auto start = std::chrono::steady_clock::now();
 
   current_temp_.Store(output_, row_begin_, row_end_);
@@ -61,7 +63,8 @@ void ExplicitSolver::CalculateNextLayer() {
 // #pragma omp parallel for num_threads(4)
   for (int i = row_begin_; i < row_end; ++i) {
     for (int k = 0; k <= nz_ + 1; ++k) {
-      current_temp_[i][k] = GetNodeValue(i, k);
+      // current_temp_[i][k] = GetNodeValue(i, k);
+      current_temp_[i][k] = GetNodeValue(&nodes[i][k]);
     }
   }
 
@@ -69,197 +72,108 @@ void ExplicitSolver::CalculateNextLayer() {
   current_temp_.Store(output_, row_begin_, row_end_);
 }
 
-long double ExplicitSolver::GetNodeValue(int i, int k) {
+void ExplicitSolver::PrepareNodeEdges() {
   const int N = nx_;
   const int M = nz_;
 
-  // GetToolWaveHeight() - 0.25 dz(M)
-  const double height_diff = manager_->GetToolHeight() - manager_->GetToolPenetration();
+  nodes.resize(N + 2, std::vector<NodeEdgeInfo>(M + 2));
 
-  // i=0, 0<=k<=M+1
-  auto lambda_x_0k = [&](int k) -> long double {
-    // TODO: maybe k+0.5, as in lambda_x_Nk
-    int lambda_z = std::min(M, k);
-    return lambda(0.25, lambda_z) * (T(1, k) - T(0, k)) / (0.5 * dx(1));
-  };
+  for (int i = 0; i <= N + 1; i++) {
+    for (int k = 0; k <= M + 1; k++) {
+      NodeEdgeInfo& node = nodes[i][k];
+      node.i = i;
+      node.k = k;
 
-  // i=N+1, 0<=k<=M+1
-  auto lambda_x_Nk = [&](int k) -> long double {
-    double lambda_z = k + 0.5;
-    if (k == 0) {
-      lambda_z = 0;
-    } else if (k == M + 1) {
-      lambda_z = M;
+      if (i == 0) {
+        node.width = 0.5 * dx(1);
+      } else if (i == N + 1) {
+        node.width = 0.5 * dx(N);
+      } else {
+        node.width = dx(i);
+      }
+
+      if (k == 0) {
+        node.height = 0.5 * dz(1);
+      } else if (k == M + 1) {
+        node.height = 0.5 * dz(M);
+      } else {
+        node.height = dz(k);
+      }
+
+      if (i == 1 || i == N) {
+        node.width *= 0.75;
+      }
+      if (k == 1 || k == M) {
+        node.height *= 0.75;
+      }
+
+      if (i == 0) {
+        node.left_edge = EdgeType::kAir;
+        node.right_edge = (k == 0 || k == M + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
+        node.bottom_edge = (k == 0) ? EdgeType::kAir : EdgeType::kMixed;
+        node.top_edge = (k == M + 1) ? EdgeType::kAir : EdgeType::kMixed;
+      } else if (i == N + 1) {
+        node.left_edge = (k == 0 || k == M + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
+        node.right_edge = EdgeType::kAir;
+        node.bottom_edge = (k == 0) ? EdgeType::kAir : EdgeType::kMixed;
+        node.top_edge = (k == M + 1) ? EdgeType::kAir : EdgeType::kMixed;
+      } else if (k == 0) {
+        node.left_edge = EdgeType::kMixed;
+        node.right_edge = EdgeType::kMixed;
+        node.top_edge = EdgeType::kMaterial;
+        node.bottom_edge = EdgeType::kAir;
+      } else if (k == M + 1) {
+        node.left_edge = EdgeType::kMixed;
+        node.right_edge = EdgeType::kMixed;
+        node.top_edge = EdgeType::kAir;
+        node.bottom_edge = EdgeType::kMaterial;
+      } else {
+        node.left_edge = EdgeType::kMaterial;
+        node.right_edge = EdgeType::kMaterial;
+        node.top_edge = EdgeType::kMaterial;
+        node.bottom_edge = EdgeType::kMaterial;
+      }
     }
-    return lambda(N - 0.25, lambda_z) * (T(N + 1, k) - T(N, k)) / (0.5 * dx(N));
+  }
+}
+
+long double ExplicitSolver::GetNodeValue(NodeEdgeInfo* node) {
+  int i = node->i;
+  int k = node->k;
+
+  long double right_side = manager_->GetHeatX(i, k) + manager_->GetHeatZ(i, k);
+
+  auto get_air = [&](double alpha, long double size) -> long double {
+    return -alpha * (T(i, k) - t_out) / size;
   };
 
-  // i in tool, k=M+1
-  auto lambda_x_iM = [&](int i) -> long double {
-    return lambda(i + 0.5, M) * (T(i + 1, M + 1) - T(i, M + 1)) / (dxb(i + 1));
+  auto get_material = [&](int dx, int dk, long double size) -> long double {
+    long double lbd = lambda(i + 0.5 * dx, k + 0.5 * dk);
+    return lbd * (T(i + dx, k + dk) - T(i, k)) / (size * size);
   };
 
-  // i in tool, k=M+1
-  auto lambda_xb_iM = [&](int i) -> long double {
-    return lambda(i - 0.5, M) * (T(i, M + 1) - T(i - 1, M + 1)) / (dxb(i));
-  };
+  auto get_for_edge =
+      [&](EdgeType type, double alpha, int dx, int dk, long double size) -> long double {
+        switch (type) {
+          case EdgeType::kAir:
+            return get_air(alpha, size);
+          case EdgeType::kMaterial:
+            return get_material(dx, dk, size);
+          case EdgeType::kMixed:
+            return 0.5 * get_air(alpha, size) + 0.5 * get_material(dx, dk, size);
+          case EdgeType::kNone:
+            return 0;
+        }
+      };
 
-  // 0<=i<=N+1, k=0
-  auto lambda_z_i0 = [&](int i) -> long double {
-    int lambda_x = std::min(N, i);
-    return lambda(lambda_x, 0.25) * (T(i, 1) - T(i, 0)) / (0.5 * dz(1));
-  };
-
-  // 0<=i<=M+1, k=M+1
-  auto lambda_z_iM = [&](int i) -> long double {
-    int lambda_x = std::min(N, i);
-    return lambda(lambda_x, M - 0.25) * (T(i, M + 1) - T(i, M)) / (0.5 * dz(M));
-  };
-
-  // 1<=i<=N, k=0
-  auto lambda_xx_i0 = [&](int i) -> long double {
-    return (
-        lambda(i + 0.5, 0) * (T(i + 1, 0) - T(i, 0)) / (0.5 * dxb(i + 1)) -
-            lambda(i - 0.5, 0) * (T(i, 0) - T(i - 1, 0)) / (0.5 * dxb(i))
-    ) / dx(i);
-  };
-
-  // 1<=i<=N, k=M+1
-  auto lambda_xx_iM = [&](int i) -> long double {
-    return (
-        lambda(i + 0.5, M) * (T(i + 1, M + 1) - T(i, M + 1)) / dxb(i + 1) -
-            lambda(i - 0.5, M) * (T(i, M + 1) - T(i - 1, M + 1)) / dxb(i)
-    ) / dx(i);
-  };
-
-  auto lambda_xx_ik = [&](int i, int k) -> long double {
-    return (
-        lambda(i + 0.5, k) * (T(i + 1, k) - T(i, k)) / (0.5 * dxb(i + 1)) -
-            lambda(i - 0.5, k) * (T(i, k) - T(i - 1, k)) / (0.5 * dxb(i))
-    ) / dx(i);
-  };
-
-  // i=0 or i=N+1, 1<=k<=M
-  auto lambda_zz_0k = [&](int i, int k) -> long double {
-    int lambda_x = std::min(N, i);
-    /// lambda(x, k+1) - lambda(x, k) in doc
-    return (
-        lambda(lambda_x, k + 0.5) * (T(i, k + 1) - T(i, k)) / dzb(k + 1) -
-            lambda(lambda_x, k - 0.5) * (T(i, k) - T(i, k - 1)) / dzb(k)
-    ) / dz(k);
-  };
-
-  auto lambda_zz_tool = [&](int i) -> long double {
-    return (
-        lambda(i, M) * (manager_->GetToolInitTemperature() - T(i, M + 1)) / height_diff -
-            lambda(i, M - 0.25) * (T(i, M + 1) - T(i, M)) / (0.5 * dz(M))
-    ) / manager_->GetToolWaveHeight();
-  };
-
-  auto lambda_zz_ik = [&](int i, int k) -> long double {
-    return (
-        lambda(i, k + 0.5) * (T(i, k + 1) - T(i, k)) / dzb(k + 1) -
-            lambda(i, k - 0.5) * (T(i, k) - T(i, k - 1)) / dzb(k)
-    ) / dz(i);
-  };
-
-  long double right_side = 0;
-
-  if (i == 0 && k == 0) {
-    right_side = lambda_x_0k(k) / (0.25 * dx(1)) +
-        lambda_z_i0(0) / (0.25 * dz(1)) -
-        alpha1 * (T(0, 0) - t_out) / (0.25 * dx(1)) -
-        alpha3 * (T(0, 0) - t_out) / (0.25 * dz(1));
-  }
-
-  if (i == 0 && k >= 1 && k <= M) {
-    right_side = lambda_x_0k(k) / (0.25 * dx(1)) +
-        lambda_zz_0k(0, k) -
-        alpha1 * (T(0, k) - t_out) / (0.25 * dx(1));
-  }
-
-  if (i == 0 && k == M + 1) {
-    right_side = lambda_x_0k(k) / (0.25 * dx(1)) -
-        lambda_z_iM(0) / (0.25 * dz(M)) -
-        alpha1 * (T(0, M + 1) - t_out) / (0.25 * dx(1)) -
-        alpha4 * (T(0, M + 1) - t_out) / (0.25 * dz(M));
-  }
-
-  if (i == N + 1 && k == 0) {
-    right_side = -lambda_x_Nk(k) / (0.25 * dx(N)) +
-        lambda_z_i0(N + 1) / (0.25 * dz(1)) -
-        alpha2 * (T(N + 1, 0) - t_out) / (0.25 * dx(N)) -
-        alpha3 * (T(N + 1, 0) - t_out) / (0.25 * dz(1));
-  }
-
-  if (i == N + 1 && k >= 1 && k <= M) {
-    right_side = -lambda_x_Nk(k) / (0.25 * dx(N)) +
-        lambda_zz_0k(N + 1, k) -
-        alpha2 * (T(N + 1, k) - t_out) / (0.25 * dx(N));
-  }
-
-  if (i == N + 1 && k == M + 1) {
-    right_side = -lambda_x_Nk(M + 1) / (0.25 * dx(N)) -
-        lambda_z_iM(N + 1) / (0.25 * dz(M)) -
-        alpha2 * (T(N + 1, M + 1) - t_out) / (0.25 * dx(N)) -
-        alpha3 * (T(N + 1, M + 1) - t_out) / (0.25 * dz(M));
-  }
-
-  if (i >= 1 && i <= N && k == 0) {
-    right_side = lambda_xx_i0(i) +
-        lambda_z_i0(i) / (0.25 * dz(1)) -
-        alpha3 * (T(i, 0) - t_out) / (0.25 * dz(1));
-  }
-
-  if (k == M + 1 &&
-      ((i >= 1 && i < manager_->GetToolStartI()) ||
-          (i > manager_->GetToolFinishI() + 1 && i <= M)
-      )) {
-    right_side = lambda_xx_iM(i) -
-        lambda_z_iM(i) / (0.25 * dz(M)) -
-        alpha4 * (T(i, M + 1) - t_out) / (0.25 * dz(M));
-  }
-
-  if (i == manager_->GetToolStartI() && k == M + 1) {
-    right_side = lambda_xx_iM(i) -
-        lambda_z_iM(i) / (0.25 * dz(M)) +
-        manager_->GetHeatX(i, M) -
-        alpha4 * (T(i, M + 1) - t_out) / (0.25 * dz(M));
-  }
-
-  if (i == manager_->GetToolStartI() + 1 && k == M + 1) {
-    right_side = lambda_x_iM(i) / dx(i) -
-        0.25 * dz(M) / manager_->GetToolWaveHeight() * lambda_xb_iM(i) / dx(i) +
-        lambda_zz_tool(i) +  // точно плюс???
-        0.25 * dz(M) / manager_->GetToolWaveHeight() * manager_->GetHeatX(i, k) -
-        height_diff / manager_->GetToolWaveHeight() * alpha4 * (T(i, M + 1) - t_out) / dx(i);
-  }
-
-  if (i > manager_->GetToolStartI() + 1 && i < manager_->GetToolFinishI() && k == M + 1) {
-    right_side = lambda_xx_iM(i) + lambda_zz_tool(i);
-  }
-
-  if (i == manager_->GetToolFinishI() && k == M + 1) {
-    right_side = 0.25 * dz(M) / manager_->GetToolWaveHeight() * lambda_x_iM(i) / dx(i) -
-        lambda_xb_iM(i) / dx(i) +
-        lambda_zz_tool(i) -  // точно минус???
-        0.25 * dz(M) / manager_->GetToolWaveHeight() * manager_->GetHeatX(i, k) -
-        height_diff / manager_->GetToolWaveHeight() * alpha4 * (T(i, M + 1) - t_out) / dx(i);
-  }
-
-  if (i == manager_->GetToolFinishI() + 1 && k == M + 1) {
-    right_side = lambda_xx_iM(i) -
-        lambda_z_iM(i) / (0.25 * dz(M)) +
-        manager_->GetHeatX(i, M) -
-        alpha4 * (T(i, M + 1) - t_out) / (0.25 * dz(M));
-  }
-
-  if (i >= 1 && i <= N && k >= 1 && k <= M) {
-    right_side = lambda_xx_ik(i, k) +
-        lambda_zz_ik(i, k) +
-        manager_->GetHeatX(i, k) +
-        manager_->GetHeatZ(i, k);
-  }
+  // left
+  right_side -= get_for_edge(node->left_edge, alpha1, -1, 0, node->width);
+  // right
+  right_side += get_for_edge(node->right_edge, alpha2, 1, 0, node->width);
+  // bottom
+  right_side -= get_for_edge(node->bottom_edge, alpha3, 0, -1, node->height);
+  // top
+  right_side += get_for_edge(node->top_edge, alpha4, 0, 1, node->height);
 
   return T(i, k) + dt / rho(i, k) / c(i, k) * right_side;
 }

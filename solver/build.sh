@@ -1,3 +1,3 @@
 #! /usr/bin/env sh
 
-cp ./cmake-build-release/solver ../gui/resources/solver/solver
+cp ./cmake-build-debug/solver ../gui/resources/solver/solver

@@ -10,14 +10,14 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 
     color_map_ = new QCPColorMap(xAxis, yAxis);
 
-    QCPRange range(kMinTemperature, kMaxTemperature);
-    QCPColorScale *colorScale = new QCPColorScale(this);
-    colorScale->setDataRange(range);
+    QCPRange range(20, kMaxTemperature);
+    color_scale_ = new QCPColorScale(this);
+    color_scale_->setDataRange(range);
 
-    plotLayout()->addElement(0, 1, colorScale);
-    colorScale->setType(QCPAxis::atRight);
-    color_map_->setColorScale(colorScale);
-    colorScale->axis()->setLabel("Temperature, Celsius");
+    plotLayout()->addElement(0, 1, color_scale_);
+    color_scale_->setType(QCPAxis::atRight);
+    color_map_->setColorScale(color_scale_);
+    color_scale_->axis()->setLabel("Temperature, Celsius");
 
     color_map_->setGradient(QCPColorGradient::gpPolar);
     // we could have also created a QCPColorGradient instance and added own colors to
@@ -25,21 +25,25 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 
     QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
     axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    color_scale_->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
 
     rescaleAxes();
 }
 
 void Heatmap::SetValues(const QVector<QVector<double>>& data) {
+    double min_value = data[0][0] - 273;
+    double max_value = min_value;
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {
             double value = data[y][x] - 273;
-            value = std::min(value, 1. * kMaxTemperature);
-            value = std::max(value, 1. * kMinTemperature);
             color_map_->data()->setCell(x, y, value);
+            min_value = std::min(min_value, value);
+            max_value = std::max(max_value, value);
         }
     }
+    QCPRange range(min_value, max_value);
+    color_scale_->setDataRange(range);
     replot();
 }
 
