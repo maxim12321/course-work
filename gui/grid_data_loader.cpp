@@ -5,13 +5,15 @@
 #include <QDebug>
 #include <cassert>
 
-void GridDataLoader::LoadData(int size) {
+int GridDataLoader::LoadData() {
     QFile file(kOutputFileName);
     if(!file.open(QIODevice::ReadOnly)) {
         throw std::runtime_error("error opening file: " + file.error());
     }
 
     QTextStream file_stream(&file);
+
+    int size = file_stream.readLine().toInt();
 
     data_.clear();
 
@@ -66,6 +68,7 @@ void GridDataLoader::LoadData(int size) {
     width_ = width;
 
     file.close();
+    return size;
 }
 
 int GridDataLoader::GetGridWidth() {

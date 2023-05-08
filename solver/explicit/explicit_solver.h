@@ -14,6 +14,9 @@ class ExplicitSolver : public SolverBase, public PropertiesWrapper {
   void Solve() override;
 
  private:
+  const int kLoggingSkip = 10;
+
+ private:
   void PrepareNodeEdges();
 
   void CalculateNextLayer();

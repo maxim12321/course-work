@@ -7,11 +7,12 @@ GridDataProcessor::GridDataProcessor(Heatmap *heatmap) : heatmap_(heatmap) {
     connect(timer_, SIGNAL(timeout()), this, SLOT(UpdateData()));
 }
 
-void GridDataProcessor::ProcessSolverOutput(int total_steps, int time_interval) {
+void GridDataProcessor::ProcessSolverOutput(int steps_count, int time_interval_ns) {
     qDebug() << "ProcessSolverOutput";
-    total_steps_ = total_steps;
-    default_timer_interval_ = std::max(1, time_interval);
-    data_loader_.LoadData(total_steps);
+    total_steps_ = data_loader_.LoadData();
+    int time_multiplier = steps_count / total_steps_;
+    default_timer_interval_ = std::max(1, (time_interval_ns * time_multiplier));
+    qDebug() << default_timer_interval_;
     heatmap_->Resize(data_loader_.GetGridWidth(), data_loader_.GetGridHeight());
 }
 

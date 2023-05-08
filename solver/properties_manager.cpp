@@ -154,30 +154,43 @@ void PropertiesManagerFabric::NormalizePropertiesMeasurmentUnits(
   manager->tool_angular_velo_ = 2 * M_PI * manager->tool_angular_velo_ / 60;
 }
 
-std::pair<int, int> PropertiesManager::ComputeDeltas(int n, long double dx,
-                                                     Vector &delta,
-                                                     Vector borders) {
-  long double remainder = 0;
-  long double curr_pos = 0;
+std::vector<int> PropertiesManager::ComputeDeltas(Vector &delta, Vector borders) {
+  int n = delta.GetSize();
 
-  int j = 0;
-  for (int i = 1; i <= n; ++i) {
-    delta[i] = std::min(dx + remainder, borders[j] - curr_pos);
-    if (delta[i] < 1e-9) {
-      borders[j] = i - 1;
-      ++j;
-      if (j == borders.GetSize()) {
-        std::cout << curr_pos << remainder << '\n';
-        assert(i == n && curr_pos == borders[2] && remainder < 1e-9);
-      }
-      --i;
-      continue;
-    }
-    remainder = remainder > 1e-9 ? 0 : dx - delta[i];
-    curr_pos += delta[i];
+  std::cout << borders << std::endl;
+  int parts = borders.GetSize() - 1;
+  int default_part_size = n / parts;
+
+  std::vector<int> part_sizes(parts, 0);
+
+  for (int i = 0; i < parts; ++i) {
+    long double curr_width = borders[i + 1] - borders[i];
+    long double full_width = borders[parts] - borders[0];
+    part_sizes[i] = static_cast<int> (curr_width / full_width * n);
   }
-  return std::make_pair(static_cast<int>(borders[0]),
-                        static_cast<int>(borders[1]));
+
+  part_sizes[0] += n - std::accumulate(part_sizes.begin(), part_sizes.end(), 0);
+
+  for (int sz : part_sizes) {
+    std::cout << sz << " ";
+  }
+  std::cout << std::endl;
+
+  int index = 0;
+  for (int i = 0; i < part_sizes.size(); ++i) {
+    long double size = (borders[i + 1] - borders[i]) / part_sizes[i];
+    for (int j = 0; j < part_sizes[i]; ++j, ++index) {
+      delta[index] = size;
+    }
+  }
+
+  std::cout << delta << std::endl;
+
+  std::vector<int> part_indexes = part_sizes;
+  for (int i = 1; i < parts; ++i) {
+    part_indexes[i] += part_indexes[i - 1];
+  }
+  return part_indexes;
 }
 
 Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
@@ -190,10 +203,9 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 
   // + 2 according to enumeration in doc
   delta_x_ = Vector(nx + 2);
-  auto hor_indxs = ComputeDeltas(nx, total_length_ / nx, delta_x_,
-                                 {tool_start_, tool_finish_, total_length_});
-  i_tool_start_ = hor_indxs.first;
-  i_tool_finish_ = hor_indxs.second;
+  auto hor_indxs = ComputeDeltas(delta_x_, {0, tool_start_, tool_finish_, total_length_, total_length_});
+  i_tool_start_ = hor_indxs[0] - 1;
+  i_tool_finish_ = hor_indxs[1] - 1;
 
   double current_x_position = 0;
   x_position_ = Vector(nx + 2);
@@ -203,11 +215,10 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
   }
 
   delta_z_ = Vector(nz + 2);
-  auto vert_indxs = ComputeDeltas(
-      nz, total_height_ / nz, delta_z_,
-      {backing_height_, height_without_penetration_, total_height_});
-  i_plate_start_ = vert_indxs.first;
-  i_tool_bottom_start_ = vert_indxs.second;
+  // (tool_height_ + 0.007) is for updated area
+  auto vert_indxs = ComputeDeltas(delta_z_, {0, backing_height_, height_without_penetration_, total_height_, tool_height_ + 0.007});
+  i_plate_start_ = vert_indxs[0] - 1;
+  i_tool_bottom_start_ = vert_indxs[1] - 1;
 
   tool_wave_height_ =
       tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];

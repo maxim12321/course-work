@@ -93,8 +93,7 @@ public:
   int GetTimeLayers();
 
 private:
-  std::pair<int, int> ComputeDeltas(int n, long double dx, Vector &delta,
-                                    Vector borders);
+  std::vector<int> ComputeDeltas(Vector &delta, Vector borders);
 
 private:
   std::vector<Material> materials_;
@@ -103,9 +102,6 @@ private:
   std::vector<std::vector<int>> materials_grid_;
 
   // Plate properties
-  // const std::map<std::string, double*> plate_propery_name_to_value_ = {
-  //     ""
-  // }
   double plate_lenght_;
   double plate_height_;
   double plate_init_temp_;

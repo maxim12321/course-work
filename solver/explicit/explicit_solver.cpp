@@ -18,16 +18,18 @@ ExplicitSolver::ExplicitSolver(int p_rank,
 }
 
 void ExplicitSolver::Solve() {
+  output_ << (properties_->GetTimeLayers() / kLoggingSkip) + 1 << "\n";
+
   PrepareNodeEdges();
 
   auto start = std::chrono::steady_clock::now();
 
   current_temp_.Store(output_, row_begin_, row_end_);
 
-  for (size_t i = 0; i < properties_->GetTimeLayers(); ++i) {
+  for (size_t i = 1; i <= properties_->GetTimeLayers(); ++i) {
     CalculateNextLayer();
-    if (i % 100 == 0) {
-      // Print some debug info for long calculations
+    if (i % kLoggingSkip == 0) {
+      current_temp_.Store(output_, row_begin_, row_end_);
     }
   }
 
@@ -69,7 +71,6 @@ void ExplicitSolver::CalculateNextLayer() {
   }
 
   previous_temp_ = current_temp_;
-  current_temp_.Store(output_, row_begin_, row_end_);
 }
 
 void ExplicitSolver::PrepareNodeEdges() {
@@ -147,9 +148,22 @@ long double ExplicitSolver::GetNodeValue(NodeEdgeInfo* node) {
     return -alpha * (T(i, k) - t_out) / size;
   };
 
-  auto get_material = [&](int dx, int dk, long double size) -> long double {
+  auto get_material = [&](int dx, int dk) -> long double {
     long double lbd = lambda(i + 0.5 * dx, k + 0.5 * dk);
-    return lbd * (T(i + dx, k + dk) - T(i, k)) / (size * size);
+    if (dx < 0 || dk < 0) {
+      lbd *= -1;
+    }
+
+    long double size, next_size;
+    if (dx == 0) {
+      size = node->height;
+      next_size = nodes[i][k + dk].height;
+    } else {
+      size = node->width;
+      next_size = nodes[i + dx][k].width;
+    }
+
+    return lbd * (T(i + dx, k + dk) - T(i, k)) / size / (0.5 * size + 0.5 * next_size);
   };
 
   auto get_for_edge =
@@ -158,9 +172,9 @@ long double ExplicitSolver::GetNodeValue(NodeEdgeInfo* node) {
           case EdgeType::kAir:
             return get_air(alpha, size);
           case EdgeType::kMaterial:
-            return get_material(dx, dk, size);
+            return get_material(dx, dk);
           case EdgeType::kMixed:
-            return 0.5 * get_air(alpha, size) + 0.5 * get_material(dx, dk, size);
+            return 0.5 * get_air(alpha, size) + 0.5 * get_material(dx, dk);
           case EdgeType::kNone:
             return 0;
         }

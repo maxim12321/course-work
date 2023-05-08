@@ -72,7 +72,6 @@ int main(int argc, char** argv) {
   // Wait for all processes to finish
   MPI_Barrier(MPI_COMM_WORLD);
 
-  // TODO: collect results into out
   if (current_rank == kMasterRank) {
     std::ofstream out(output_filepath, std::ios::out);
     if (out.fail()) {
@@ -80,13 +79,21 @@ int main(int argc, char** argv) {
       return 2;
     }
 
+    int time_layers = properties.GetTimeLayers();
+
     std::vector<std::ifstream> results;
     results.reserve(process_count);
     for (int i = 0; i < process_count; ++i) {
       results.emplace_back(GetResultsFileName(i), std::ios::in);
+
+      int curr_layers;
+      results.back() >> curr_layers;
+      time_layers = std::min(time_layers, curr_layers);
     }
 
-    for (int time = 0; time <= properties.GetTimeLayers(); ++time) {
+    out << time_layers << "\n";
+
+    for (int time = 0; time < time_layers; ++time) {
       Matrix result(0, 0);
 
       for (int i = 0; i < process_count; ++i) {
