@@ -65,7 +65,6 @@ void ExplicitSolver::CalculateNextLayer() {
 // #pragma omp parallel for num_threads(4)
   for (int i = row_begin_; i < row_end; ++i) {
     for (int k = 0; k <= nz_ + 1; ++k) {
-      // current_temp_[i][k] = GetNodeValue(i, k);
       current_temp_[i][k] = GetNodeValue(&nodes[i][k]);
     }
   }
@@ -76,6 +75,7 @@ void ExplicitSolver::CalculateNextLayer() {
 void ExplicitSolver::PrepareNodeEdges() {
   const int N = nx_;
   const int M = nz_;
+  const int B = properties_->GetBackingStartI();
 
   nodes.resize(N + 2, std::vector<NodeEdgeInfo>(M + 2));
 
@@ -84,46 +84,40 @@ void ExplicitSolver::PrepareNodeEdges() {
       NodeEdgeInfo& node = nodes[i][k];
       node.i = i;
       node.k = k;
+      node.width = dx(i);
+      node.height = dz(k);
 
-      if (i == 0) {
-        node.width = 0.5 * dx(1);
-      } else if (i == N + 1) {
-        node.width = 0.5 * dx(N);
-      } else {
-        node.width = dx(i);
+      if (i == 0 || i == N + 1) {
+        node.width /= 2;
       }
 
-      if (k == 0) {
-        node.height = 0.5 * dz(1);
-      } else if (k == M + 1) {
-        node.height = 0.5 * dz(M);
-      } else {
-        node.height = dz(k);
+      if (k == 0 || k == B + 1) {
+        node.height /= 2;
       }
 
       if (i == 1 || i == N) {
         node.width *= 0.75;
       }
-      if (k == 1 || k == M) {
+      if (k == 1 || k == B) {
         node.height *= 0.75;
       }
 
       if (i == 0) {
         node.left_edge = EdgeType::kAir;
-        node.right_edge = (k == 0 || k == M + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
+        node.right_edge = (k == 0 || k == B + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
         node.bottom_edge = (k == 0) ? EdgeType::kAir : EdgeType::kMixed;
-        node.top_edge = (k == M + 1) ? EdgeType::kAir : EdgeType::kMixed;
+        node.top_edge = (k == B + 1) ? EdgeType::kAir : EdgeType::kMixed;
       } else if (i == N + 1) {
-        node.left_edge = (k == 0 || k == M + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
+        node.left_edge = (k == 0 || k == B + 1) ? EdgeType::kMixed : EdgeType::kMaterial;
         node.right_edge = EdgeType::kAir;
         node.bottom_edge = (k == 0) ? EdgeType::kAir : EdgeType::kMixed;
-        node.top_edge = (k == M + 1) ? EdgeType::kAir : EdgeType::kMixed;
+        node.top_edge = (k == B + 1) ? EdgeType::kAir : EdgeType::kMixed;
       } else if (k == 0) {
         node.left_edge = EdgeType::kMixed;
         node.right_edge = EdgeType::kMixed;
         node.top_edge = EdgeType::kMaterial;
         node.bottom_edge = EdgeType::kAir;
-      } else if (k == M + 1) {
+      } else if (k == B + 1) {
         node.left_edge = EdgeType::kMixed;
         node.right_edge = EdgeType::kMixed;
         node.top_edge = EdgeType::kAir;
@@ -133,6 +127,43 @@ void ExplicitSolver::PrepareNodeEdges() {
         node.right_edge = EdgeType::kMaterial;
         node.top_edge = EdgeType::kMaterial;
         node.bottom_edge = EdgeType::kMaterial;
+      }
+
+      if (i > properties_->GetToolStartI() && i <= properties_->GetToolFinishI()) {
+        if (k == B + 1) {
+          node.top_edge = EdgeType::kMaterial;
+        } else if (k == M + 1) {
+          node.left_edge = EdgeType::kMixed;
+          node.right_edge = EdgeType::kMixed;
+          node.top_edge = EdgeType::kAir;
+        }
+      } else {
+        if (k >= B + 2) {
+          node.left_edge = EdgeType::kNone;
+          node.right_edge = EdgeType::kNone;
+          node.top_edge = EdgeType::kNone;
+          node.bottom_edge = EdgeType::kNone;
+        }
+      }
+
+      if (i == properties_->GetToolStartI() + 1 && k > B + 1 && k <= M + 1) {
+        node.left_edge = EdgeType::kAir;
+        if (k < M + 1) {
+          node.top_edge = EdgeType::kMixed;
+        }
+        if (k > B + 2) {
+          node.bottom_edge = EdgeType::kMixed;
+        }
+      }
+
+      if (i == properties_->GetToolFinishI() && k > B + 1 && k <= M + 1) {
+        node.right_edge = EdgeType::kAir;
+        if (k < M + 1) {
+          node.top_edge = EdgeType::kMixed;
+        }
+        if (k > B + 2) {
+          node.bottom_edge = EdgeType::kMixed;
+        }
       }
     }
   }
@@ -150,9 +181,9 @@ long double ExplicitSolver::GetNodeValue(NodeEdgeInfo* node) {
 
   auto get_material = [&](int dx, int dk) -> long double {
     long double lbd = lambda(i + 0.5 * dx, k + 0.5 * dk);
-    if (dx < 0 || dk < 0) {
-      lbd *= -1;
-    }
+    // if (dx < 0 || dk < 0) {
+    //   lbd *= -1;
+    // }
 
     long double size, next_size;
     if (dx == 0) {
@@ -180,12 +211,19 @@ long double ExplicitSolver::GetNodeValue(NodeEdgeInfo* node) {
         }
       };
 
+  double left_alpha = alpha1;
+  double right_alpha = alpha2;
+  if (k > properties_->GetBackingStartI()) {
+    left_alpha = properties_->GetAlpha4Tool();
+    right_alpha = properties_->GetAlpha4Tool();
+  }
+
   // left
-  right_side -= get_for_edge(node->left_edge, alpha1, -1, 0, node->width);
+  right_side += get_for_edge(node->left_edge, left_alpha, -1, 0, node->width);
   // right
-  right_side += get_for_edge(node->right_edge, alpha2, 1, 0, node->width);
+  right_side += get_for_edge(node->right_edge, right_alpha, 1, 0, node->width);
   // bottom
-  right_side -= get_for_edge(node->bottom_edge, alpha3, 0, -1, node->height);
+  right_side += get_for_edge(node->bottom_edge, alpha3, 0, -1, node->height);
   // top
   right_side += get_for_edge(node->top_edge, alpha4, 0, 1, node->height);
 

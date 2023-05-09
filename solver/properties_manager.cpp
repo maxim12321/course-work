@@ -203,7 +203,7 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
 
   // + 2 according to enumeration in doc
   delta_x_ = Vector(nx + 2);
-  auto hor_indxs = ComputeDeltas(delta_x_, {0, tool_start_, tool_finish_, total_length_, total_length_});
+  auto hor_indxs = ComputeDeltas(delta_x_, {0, tool_start_, tool_finish_, total_length_});
   i_tool_start_ = hor_indxs[0] - 1;
   i_tool_finish_ = hor_indxs[1] - 1;
 
@@ -215,10 +215,11 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
   }
 
   delta_z_ = Vector(nz + 2);
-  // (tool_height_ + 0.007) is for updated area
-  auto vert_indxs = ComputeDeltas(delta_z_, {0, backing_height_, height_without_penetration_, total_height_, tool_height_ + 0.007});
+  // (tool_height_ * 1.2) is for updated area
+  auto vert_indxs = ComputeDeltas(delta_z_, {0, backing_height_, height_without_penetration_, total_height_, total_height_ * 1.2});
   i_plate_start_ = vert_indxs[0] - 1;
   i_tool_bottom_start_ = vert_indxs[1] - 1;
+  i_backing_start_ = vert_indxs[2] - 1;
 
   tool_wave_height_ =
       tool_height_ - tool_penetration_depth_ + 0.25 * delta_z_[nz];
@@ -236,8 +237,12 @@ Matrix PropertiesManager::InitializeGrids(int nx, int nz) {
         init_temp[x][z] = plate_init_temp_;
         materials_grid_[x][z] = plate_material_i_;
       } else if (x <= i_tool_start_ || x > i_tool_finish_) {
-        init_temp[x][z] = plate_init_temp_;
-        materials_grid_[x][z] = plate_material_i_;
+        if (z <= i_backing_start_) {
+          init_temp[x][z] = plate_init_temp_;
+          materials_grid_[x][z] = plate_material_i_;
+        } else {
+          init_temp[x][z] = out_temp_;
+        }
       } else {
         init_temp[x][z] = tool_init_temp_;
         materials_grid_[x][z] = tool_material_i_;
@@ -358,7 +363,8 @@ double PropertiesManager::GetThermalConductivity(int x, int z, double temp) {
 double PropertiesManager::GetDeltaT() { return delta_t_; }
 
 double PropertiesManager::GetDeltaX(int i) {
-  assert(i > 0 && i + 1 < delta_x_.GetSize());
+  // assert(i > 0 && i + 1 < delta_x_.GetSize());
+  assert(i >= 0 && i < delta_x_.GetSize());
   return delta_x_[i];
 }
 
@@ -368,7 +374,8 @@ double PropertiesManager::GetDeltaBackX(int i) {
 }
 
 double PropertiesManager::GetDeltaZ(int i) {
-  assert(i > 0 && i + 1 < delta_z_.GetSize());
+  // assert(i > 0 && i + 1 < delta_z_.GetSize());
+  assert(i >= 0 && i < delta_z_.GetSize());
   return delta_z_[i];
 }
 
@@ -392,6 +399,10 @@ int PropertiesManager::GetToolStartI() { return i_tool_start_; }
 
 int PropertiesManager::GetToolFinishI() { return i_tool_finish_; }
 
+int PropertiesManager::GetBackingStartI() {
+  return i_backing_start_;
+}
+
 // Heat getters
 double PropertiesManager::GetHeatOutputX() {
   // TODO: check values
@@ -413,6 +424,10 @@ double PropertiesManager::GetHeatOutputZ(int x) {
 double PropertiesManager::GetHeatX(int x, int z) {
   // Ignoring nodes below tool
   if (z < i_tool_bottom_start_) {
+    return 0;
+  }
+  // Ignoring outer part of the tool
+  if (z > i_backing_start_) {
     return 0;
   }
 

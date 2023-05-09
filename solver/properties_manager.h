@@ -78,6 +78,7 @@ public:
   double GetToolInitTemperature();
   int GetToolStartI();
   int GetToolFinishI();
+  int GetBackingStartI();
 
   double GetHeatOutputX();
   double GetHeatOutputZ(int x);
@@ -136,6 +137,7 @@ private:
   // (Nx * If) in doc
   int i_tool_finish_;
   // Useful for detecting nodes that adjacent to tool
+  int i_backing_start_;
   // It's z coordinate for first node under the tool
   int i_tool_bottom_start_;
   // It's z coordinate for first node under the plate
