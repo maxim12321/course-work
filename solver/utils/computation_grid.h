@@ -4,6 +4,8 @@
 
 class ComputationGrid : public Matrix {
 public:
+    using Matrix::Matrix;
+
     ComputationGrid();
     ComputationGrid(int n, int m, int j_plate_finish, int i_tool_start, int i_tool_finish);
 

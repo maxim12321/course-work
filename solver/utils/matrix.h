@@ -11,12 +11,19 @@ class Matrix {
 public:
   Matrix();
   Matrix(int n, int m);
+  Matrix(const Matrix &) = default; 
+  Matrix(Matrix &&) noexcept = default;
 
   int GetRowCount() const;
   int GetColumnCount() const;
 
   Vector GetRow(int i);
   Vector GetColumn(int i);
+
+  double *Data(int i = 0, int j = 0);
+
+  Matrix &operator=(const Matrix &) = default;
+  Matrix &operator=(Matrix &&) noexcept = default;
 
   double &operator()(int i, int j);
   const double &operator()(int i, int j) const;

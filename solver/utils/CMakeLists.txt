@@ -7,6 +7,8 @@ set(UTILS_SOURCES
   strings.h
   computation_grid.cpp
   computation_grid.h
+  result_saver.cpp
+  result_saver.h
 )
 
 # Add the library

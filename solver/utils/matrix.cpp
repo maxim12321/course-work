@@ -14,6 +14,10 @@ Vector Matrix::GetRow(int i) { return GetVector(i, 0, 1, columns_); }
 
 Vector Matrix::GetColumn(int i) { return GetVector(0, i, columns_, rows_); }
 
+double *Matrix::Data(int i, int j) {
+  return matrix_.data() + i * columns_ + j;
+}
+
 double &Matrix::operator()(int i, int j) { return matrix_[i * columns_ + j]; }
 
 const double &Matrix::operator()(int i, int j) const {
