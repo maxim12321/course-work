@@ -1,15 +1,18 @@
 #pragma once
 
+#include <mpi.h>
 #include "../solver_base.h"
 #include "../properties_wrapper.h"
 #include "node_edge_info.h"
+#include "../utils/result_saver.h"
 
 class ExplicitSolver : public SolverBase, public PropertiesWrapper {
  public:
   ExplicitSolver(int p_rank,
                  int p_size,
                  PropertiesManager* properties,
-                 const std::string& result_file_name);
+                 std::string result_file_name,
+                 int num_threads = 1);
 
   void Solve() override;
 
@@ -34,5 +37,10 @@ class ExplicitSolver : public SolverBase, public PropertiesWrapper {
 
   std::vector<std::vector<NodeEdgeInfo>> nodes;
 
-  std::ofstream output_;
+  std::string result_file_name_;
+
+  int num_threads_;
+
+  std::vector<MPI_Request> read_requests_;
+  std::vector<MPI_Request> write_requests_;
 };

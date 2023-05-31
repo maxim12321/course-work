@@ -2,7 +2,6 @@
 #include "utils/strings.h"
 
 #include <cassert>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -157,7 +156,6 @@ void PropertiesManagerFabric::NormalizePropertiesMeasurmentUnits(
 std::vector<int> PropertiesManager::ComputeDeltas(Vector &delta, Vector borders) {
   int n = delta.GetSize();
 
-  std::cout << borders << std::endl;
   int parts = borders.GetSize() - 1;
   int default_part_size = n / parts;
 
@@ -171,11 +169,6 @@ std::vector<int> PropertiesManager::ComputeDeltas(Vector &delta, Vector borders)
 
   part_sizes[0] += n - std::accumulate(part_sizes.begin(), part_sizes.end(), 0);
 
-  for (int sz : part_sizes) {
-    std::cout << sz << " ";
-  }
-  std::cout << std::endl;
-
   int index = 0;
   for (int i = 0; i < part_sizes.size(); ++i) {
     long double size = (borders[i + 1] - borders[i]) / part_sizes[i];
@@ -183,8 +176,6 @@ std::vector<int> PropertiesManager::ComputeDeltas(Vector &delta, Vector borders)
       delta[index] = size;
     }
   }
-
-  std::cout << delta << std::endl;
 
   std::vector<int> part_indexes = part_sizes;
   for (int i = 1; i < parts; ++i) {
@@ -405,14 +396,12 @@ int PropertiesManager::GetBackingStartI() {
 
 // Heat getters
 double PropertiesManager::GetHeatOutputX() {
-  // TODO: check values
   double pressure = f_x_ / delta_z_[i_tool_bottom_start_];
   double velocity = tool_angular_velo_ * tool_radius_;
   return friction_coef_ * velocity * pressure;
 }
 
 double PropertiesManager::GetHeatOutputZ(int x) {
-  // TODO: check values
   double tool_center = tool_start_ + tool_radius_;
   double radius = std::fabs(tool_center - x_position_[x]);
 

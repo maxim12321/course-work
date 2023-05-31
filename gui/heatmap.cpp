@@ -32,14 +32,14 @@ Heatmap::Heatmap(int width, int height, QWidget* parent) : QCustomPlot(parent), 
 }
 
 void Heatmap::SetValues(const QVector<QVector<double>>& data) {
-    double min_value = data[0][0] - 273;
-    double max_value = min_value;
+    double min_value = 5;
+    double max_value = 30;
     for (int x = 0; x < width_; ++x) {
         for (int y = 0; y < height_; ++y) {
             double value = data[y][x] - 273;
             color_map_->data()->setCell(x, y, value);
-            min_value = std::min(min_value, value);
-            max_value = std::max(max_value, value);
+//            min_value = std::min(min_value, value);
+//            max_value = std::max(max_value, value);
         }
     }
     QCPRange range(min_value, max_value);

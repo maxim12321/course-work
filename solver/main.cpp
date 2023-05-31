@@ -36,6 +36,8 @@ int main(int argc, char** argv) {
   std::string output_filepath = argv[2];
   std::string solver_type = (argc == 3 ? kSemiImplicitSolverType : argv[3]);
 
+  int num_threads = std::stoi(argv[4]);
+
   if (solver_type != kSemiImplicitSolverType && solver_type != kExplicitSolverType) {
     std::cerr << "Invalid solver type! Must be one of [" << kSemiImplicitSolverType << ", "
               << kExplicitSolverType << "]" << std::endl;
@@ -63,7 +65,8 @@ int main(int argc, char** argv) {
         current_rank,
         process_count,
         &properties,
-        GetResultsFileName(current_rank)
+        GetResultsFileName(current_rank),
+        num_threads
     );
   }
 

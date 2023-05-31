@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.14)
 project(solver)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+set(CMAKE_BUILD_TYPE "Release")
 
 add_executable(
         solver
@@ -21,6 +26,7 @@ add_executable(
         semi_implicit/tridiagonal.cpp
 
         utils/matrix.cpp
+        utils/result_saver.cpp
         utils/strings.cpp
         utils/vector.cpp
 )
@@ -29,5 +35,5 @@ add_executable(
 find_package(MPI REQUIRED)
 target_link_libraries(solver PUBLIC MPI::MPI_CXX)
 
-#find_package(OpenMP REQUIRED)
-#target_link_libraries(solver PUBLIC OpenMP::OpenMP_CXX)
+find_package(OpenMP REQUIRED)
+target_link_libraries(solver PUBLIC OpenMP::OpenMP_CXX)
